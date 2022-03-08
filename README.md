@@ -7,14 +7,14 @@ Backup and restore a SSH private key to mnemonic word set you can memorize.
 You check its `backup` and `restore` subcommands:
 
 ```shell
-melt backup ~/.ssh/id_ed25519
+melt ~/.ssh/id_ed25519
 melt restore --mnemonic "words from backup" ./recovered_id_ed25519
 ```
 
 You can also pipe to and from a file directly, e.g.:
 
 ```shell
-melt backup ~/.ssh/id_ed25519 > words
+melt ~/.ssh/id_ed25519 > words
 melt restore ./recovered_id_ed25519 < words
 ```
 

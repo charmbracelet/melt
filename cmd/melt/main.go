@@ -25,35 +25,17 @@ var (
 	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
 
 	rootCmd = &coral.Command{
-		Use:   "melt",
-		Short: "Backup and restore SSH keys using a mnemonic",
+		Use: "melt",
+		Example: `  melt ~/.ssh/id_ed25519
+  melt ~/.ssh/id_ed25519 > mnemonic
+  melt restore --mnemonic \"list of words\" ./restored_id25519
+  melt restore ./restored_id25519 < mnemonic`,
+		Short: "Backup a SSH private key to a mnemonic set of keys",
 		Long: `melt uses bip39 to create a mnemonic set of words that represents your SSH keys.
 
 You can then use those words to restore your private key at any time.`,
+		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
-	}
-	manCmd = &coral.Command{
-		Use:          "man",
-		Args:         coral.NoArgs,
-		Short:        "generate man pages",
-		Hidden:       true,
-		SilenceUsage: true,
-		RunE: func(cmd *coral.Command, args []string) error {
-			manPage, err := mcoral.NewManPage(1, rootCmd)
-			if err != nil {
-				return err
-			}
-			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
-				"Released under MIT license.")
-			fmt.Println(manPage.Build(roff.NewDocument()))
-			return nil
-		},
-	}
-	backupCmd = &coral.Command{
-		Use:     "backup",
-		Short:   "Backup a SSH private key",
-		Example: "melt backup ~/.ssh/id_ed25519",
-		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
 			mnemonic, err := backup(args[0], nil)
 			if err != nil {
@@ -74,9 +56,11 @@ Store them somewhere safe, print or memorize them.`))
 
 	mnemonic   string
 	restoreCmd = &coral.Command{
-		Use:     "restore",
-		Short:   "Recreate a key using the given mnemonic words",
-		Example: "melt restore --mnemonic \"list of words\" ./id_ed25519_restored",
+		Use:   "restore",
+		Short: "Recreate a key using the given mnemonic words",
+		Example: `  melt restore --mnemonic \"list of words\" ./restored_id25519
+  melt restore ./restored_id25519 < mnemonic`,
+		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
 			if err := restore(maybeFile(mnemonic), args[0]); err != nil {
@@ -87,10 +71,28 @@ Store them somewhere safe, print or memorize them.`))
 			return nil
 		},
 	}
+
+	manCmd = &coral.Command{
+		Use:          "man",
+		Args:         coral.NoArgs,
+		Short:        "generate man pages",
+		Hidden:       true,
+		SilenceUsage: true,
+		RunE: func(cmd *coral.Command, args []string) error {
+			manPage, err := mcoral.NewManPage(1, rootCmd)
+			if err != nil {
+				return err
+			}
+			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
+				"Released under MIT license.")
+			fmt.Println(manPage.Build(roff.NewDocument()))
+			return nil
+		},
+	}
 )
 
 func init() {
-	rootCmd.AddCommand(backupCmd, restoreCmd, manCmd)
+	rootCmd.AddCommand(restoreCmd, manCmd)
 
 	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "-", "Mnemonic set of words given by the backup command")
 	_ = restoreCmd.MarkFlagRequired("mnemonic")
@@ -133,6 +135,7 @@ func backup(path string, pwd []byte) (string, error) {
 		if errors.As(err, &pwderr) {
 			fmt.Fprintf(os.Stderr, "Enter the password to decrypt %q: ", path)
 			pwd, err := term.ReadPassword(int(os.Stdin.Fd()))
+			fmt.Printf("\n\n")
 			if err != nil {
 				return "", fmt.Errorf("could not read password for key: %w", err)
 			}
