@@ -12,7 +12,11 @@ import (
 
 // ToMnemonic takes a ed25519 private key and returns the list of words.
 func ToMnemonic(key *ed25519.PrivateKey) (string, error) {
-	words, err := bip39.NewMnemonic(key.Seed())
+	return toMnemonic(key.Seed())
+}
+
+func toMnemonic(seed []byte) (string, error) {
+	words, err := bip39.NewMnemonic(seed)
 	if err != nil {
 		return "", fmt.Errorf("could not create a mnemonic set of words: %w", err)
 	}

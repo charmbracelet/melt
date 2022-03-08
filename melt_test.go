@@ -10,10 +10,8 @@ import (
 
 func TestToMnemonic(t *testing.T) {
 	t.Run("invalid", func(t *testing.T) {
-		t.Skipf("this panics inside ed25519... not sure how to properly test an invalid key")
 		is := is.New(t)
-		key := ed25519.PrivateKey([]byte{})
-		w, err := ToMnemonic(&key)
+		w, err := toMnemonic([]byte{})
 		is.Equal(w, "")
 		is.True(err != nil)
 	})

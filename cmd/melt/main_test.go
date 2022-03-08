@@ -26,6 +26,21 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
 	})
 
+	t.Run("backup file that does not exist", func(t *testing.T) {
+		_, err := backup("nope")
+		is.New(t).True(err != nil)
+	})
+
+	t.Run("backup invalid ssh key", func(t *testing.T) {
+		_, err := backup("testdata/not-a-key")
+		is.New(t).True(err != nil)
+	})
+
+	t.Run("backup key of another type", func(t *testing.T) {
+		_, err := backup("testdata/id_rsa")
+		is.New(t).True(err != nil)
+	})
+
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
@@ -57,11 +72,13 @@ func TestMaybeFile(t *testing.T) {
 func sha256sum(tb testing.TB, path string) string {
 	tb.Helper()
 	is := is.New(tb)
+
 	bts, err := os.ReadFile(path)
 	is.NoErr(err)
-	tb.Log(string(bts))
+
 	digest := sha256.New()
 	_, err = digest.Write(bts)
 	is.NoErr(err)
+
 	return hex.EncodeToString(digest.Sum(nil))
 }
