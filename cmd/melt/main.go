@@ -44,7 +44,7 @@ You can then use those words to restore your private key at any time.`,
 			if isatty.IsTerminal(os.Stdout.Fd()) {
 				fmt.Println(headerStyle.Render(`Success!!!
 
-You can now use the words bellow to recreate your key using the 'keys restore' command.
+You can now use the words bellow to recreate your key using the 'melt restore' command.
 Store them somewhere safe, print or memorize them.`))
 				fmt.Println(mnemonicStyle.Render(mnemonic))
 			} else {
