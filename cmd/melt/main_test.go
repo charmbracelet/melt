@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,17 +13,15 @@ import (
 
 func TestBackupRestoreKnownKey(t *testing.T) {
 	const expectedMnemonic = `
-		model tone century code pilot
-		ball polar sauce machine crisp
-		plate soccer salon awake monkey
-		own install all broccoli marine
-		print smart square impact
+		alter gap broom kitten orient over settle work honey rule
+		coach system wage effort mask void solid devote divert
+		quarter quote broccoli jaguar lady
 	`
-	const expectedSum = "4ec2b1e65bb86ef635991c3e31341c3bdaf6862e9b1efcde0a9c0307081ffc4c"
+	const expectedSum = "ba34175ef608633b29f046b40cce596dd221347b77abba40763eef2e7ae51fe9"
 
 	t.Run("backup", func(t *testing.T) {
 		is := is.New(t)
-		mnemonic, err := backup("testdata/test_ed25519")
+		mnemonic, err := backup("testdata/id_ed25519")
 		is.NoErr(err)
 		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
 	})
@@ -32,16 +29,9 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(path, expectedMnemonic))
+		is.NoErr(restore(expectedMnemonic, path))
+		is.Equal(expectedSum, sha256sum(t, path+".pub"))
 	})
-}
-
-func sha256sum(bts []byte) (string, error) {
-	digest := sha256.New()
-	if _, err := digest.Write(bts); err != nil {
-		return "", fmt.Errorf("failed to sha256sum key: %w", err)
-	}
-	return hex.EncodeToString(digest.Sum(nil)), nil
 }
 
 func TestMaybeFile(t *testing.T) {
@@ -57,4 +47,16 @@ func TestMaybeFile(t *testing.T) {
 		is := is.New(t)
 		is.Equal("strings", maybeFile("strings"))
 	})
+}
+
+func sha256sum(tb testing.TB, path string) string {
+	tb.Helper()
+	is := is.New(tb)
+	bts, err := os.ReadFile(path)
+	is.NoErr(err)
+	tb.Log(string(bts))
+	digest := sha256.New()
+	_, err = digest.Write(bts)
+	is.NoErr(err)
+	return hex.EncodeToString(digest.Sum(nil))
 }
