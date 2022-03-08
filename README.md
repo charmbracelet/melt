@@ -36,12 +36,20 @@ To restore, we:
 - get the __entropy__ from the __mnemonic__
 - the __entropy__ is effectively the key __seed__, so we use it to create a SSH key pair
 - the key is effectively the same that was backup up, as the key is the same.
+You can verify the keys by checking the public key fingerprint, which should be
+the same in the original and _restored_ key.
 
 [bip39]: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
 
 ## Caveats
 
-At this time, only `ed25519` keys are supported.
+- At this time, only `ed25519` keys are supported;
+- If your public key has a memo (usually the user@host in which it was
+generated), it'll be lost.
+That info (or any other) can be added to the public key manually later,
+as it's effectively not used for signing/verifying.
+- Some bytes of your private key might change, due to their random block.
+The key should be basically the same though.
 
 ## License
 

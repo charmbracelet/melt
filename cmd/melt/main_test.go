@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/matryer/is"
+	"golang.org/x/crypto/ssh"
 )
 
 func TestBackupRestoreKnownKey(t *testing.T) {
@@ -18,6 +19,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 		quarter quote broccoli jaguar lady
 	`
 	const expectedSum = "ba34175ef608633b29f046b40cce596dd221347b77abba40763eef2e7ae51fe9"
+	const expectedFingerprint = "SHA256:tX0ZrsNLIB/ZlRK3vy/HsWIIkyBNhYhCSGmtqtxJcWo"
 
 	t.Run("backup", func(t *testing.T) {
 		mnemonic, err := backup("testdata/id_ed25519", nil)
@@ -63,6 +65,14 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "key")
 		is.NoErr(restore(expectedMnemonic, path))
 		is.Equal(expectedSum, sha256sum(t, path+".pub"))
+
+		bts, err := os.ReadFile(path)
+		is.NoErr(err)
+
+		k, err := ssh.ParsePrivateKey(bts)
+		is.NoErr(err)
+
+		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
 	})
 }
 
