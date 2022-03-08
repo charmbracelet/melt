@@ -13,6 +13,8 @@ import (
 	"github.com/charmbracelet/melt"
 	"github.com/mattn/go-isatty"
 	"github.com/muesli/coral"
+	mcoral "github.com/muesli/mango-coral"
+	"github.com/muesli/roff"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -23,9 +25,29 @@ var (
 	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
 
 	rootCmd = &coral.Command{
-		Use:          "melt",
-		Short:        "Backup and restore SSH keys using a mnemonic",
+		Use:   "melt",
+		Short: "Backup and restore SSH keys using a mnemonic",
+		Long: `melt uses bip39 to create a mnemonic set of words that represents your SSH keys.
+
+You can then use those words to restore your private key at any time.`,
 		SilenceUsage: true,
+	}
+	manCmd = &coral.Command{
+		Use:          "man",
+		Args:         coral.NoArgs,
+		Short:        "generate man pages",
+		Hidden:       true,
+		SilenceUsage: true,
+		RunE: func(cmd *coral.Command, args []string) error {
+			manPage, err := mcoral.NewManPage(1, rootCmd)
+			if err != nil {
+				return err
+			}
+			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
+				"Released under MIT license.")
+			fmt.Println(manPage.Build(roff.NewDocument()))
+			return nil
+		},
 	}
 	backupCmd = &coral.Command{
 		Use:     "backup",
@@ -68,7 +90,7 @@ Store them somewhere safe, print or memorize them.`))
 )
 
 func init() {
-	rootCmd.AddCommand(backupCmd, restoreCmd)
+	rootCmd.AddCommand(backupCmd, restoreCmd, manCmd)
 
 	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "-", "Mnemonic set of words given by the backup command")
 	_ = restoreCmd.MarkFlagRequired("mnemonic")
