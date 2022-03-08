@@ -43,13 +43,13 @@ Success!!!
 
 1. Key's sha256 checksum:
 
-%s	%s
+%s %s
 
 2. mnemonic set of words
 
 You can now use the words bellow to recreate your key using the 'keys restore' command.
 Store them somewhere safe, print or memorize them.
-`, args[0], sum)))
+`, sum, args[0])))
 				fmt.Println(mnemonicStyle.Render(mnemonic))
 			} else {
 				fmt.Print(mnemonic)
@@ -75,7 +75,7 @@ Store them somewhere safe, print or memorize them.
 
 The private key's sha256sum is:
 
-%[1]s	%s
+%s %[1]s
 `, args[0], sum)),
 			)
 			return nil
