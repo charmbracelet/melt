@@ -53,7 +53,7 @@ The key should be basically the same though.
 
 ## License
 
-[MIT](https://github.com/charmbracelet/melt/raw/master/LICENSE)
+[MIT](https://github.com/charmbracelet/melt/raw/main/LICENSE)
 
 ***
 
