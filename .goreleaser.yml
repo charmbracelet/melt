@@ -1,0 +1,17 @@
+includes:
+  - from_url:
+      url: charmbracelet/meta/main/goreleaser-full.yaml
+
+variables:
+  main: "./cmd/melt"
+  description: "Backup and restore SSH keys as mnemonic set of words"
+  github_url: "https://github.com/charmbracelet/melt"
+  maintainer: "Carlos A Becker <carlos@charm.sh>"
+  brew_commit_author_name: "Carlos A Becker"
+  brew_commit_author_email: "carlos@charm.sh"
+
+before:
+  hooks:
+    - ./scripts/manpages.sh
+    - ./scripts/completions.sh
+

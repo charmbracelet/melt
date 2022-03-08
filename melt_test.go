@@ -1,7 +1,6 @@
-package main
+package melt
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,7 +20,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 
 	t.Run("backup", func(t *testing.T) {
 		is := is.New(t)
-		mnemonic, sum, err := backup("testdata/test_ed25519")
+		mnemonic, sum, err := Backup("testdata/test_ed25519")
 		is.NoErr(err)
 		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
 		is.Equal(sum, expectedSum)
@@ -30,7 +29,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		sum, err := restore(path, expectedMnemonic, "ed25519")
+		sum, err := Restore(path, expectedMnemonic, "ed25519")
 		is.NoErr(err)
 		is.Equal(sum, expectedSum)
 	})
@@ -38,22 +37,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 
 func TestRestore(t *testing.T) {
 	t.Run("invalid arg", func(t *testing.T) {
-		_, err := restore(t.TempDir(), "does not matter", "rsa")
+		_, err := Restore(t.TempDir(), "does not matter", "rsa")
 		is.New(t).True(err != nil)
-	})
-}
-
-func TestMaybeFile(t *testing.T) {
-	t.Run("is a file", func(t *testing.T) {
-		is := is.New(t)
-		path := filepath.Join(t.TempDir(), "f")
-		content := "test content"
-		is.NoErr(os.WriteFile(path, []byte(content), 0o644))
-		is.Equal(content, maybeFile(path))
-	})
-
-	t.Run("not a file", func(t *testing.T) {
-		is := is.New(t)
-		is.Equal("strings", maybeFile("strings"))
 	})
 }
