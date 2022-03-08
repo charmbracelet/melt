@@ -1,4 +1,4 @@
-module github.com/caarlos0/keybackup
+module github.com/charmbracelet/melt
 
 go 1.17
 
