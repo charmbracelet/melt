@@ -23,14 +23,14 @@ var (
 	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
 
 	rootCmd = &coral.Command{
-		Use:          "keys",
+		Use:          "melt",
 		Short:        "Backup and restore SSH keys using a mnemonic",
 		SilenceUsage: true,
 	}
 	backupCmd = &coral.Command{
 		Use:     "backup",
 		Short:   "Backup a SSH private key",
-		Example: "keys backup ~/.ssh/id_ed25519",
+		Example: "melt backup ~/.ssh/id_ed25519",
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
 			mnemonic, sum, err := backup(args[0])
@@ -63,7 +63,7 @@ Store them somewhere safe, print or memorize them.
 	restoreCmd = &coral.Command{
 		Use:     "restore",
 		Short:   "Recreate a key using the given mnemonic words",
-		Example: "keys restore --mnemonic \"list of words\" ./id_ed25519_restored",
+		Example: "melt restore --mnemonic \"list of words\" ./id_ed25519_restored",
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
 			sum, err := restore(args[0], maybeFile(mnemonic), algo)
