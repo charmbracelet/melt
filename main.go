@@ -70,6 +70,7 @@ Store them somewhere safe, print or memorize them.`),
 	}
 
 	words      string
+	algo       string
 	restoreCmd = &coral.Command{
 		Use:   "restore",
 		Short: "Recreate a key using the given mnemonic words",
@@ -79,26 +80,35 @@ Store them somewhere safe, print or memorize them.`),
 				return err
 			}
 
-			pvtKey := ed25519.NewKeyFromSeed(seed)
-			if err := os.WriteFile(
-				keypath,
-				pem.EncodeToMemory(&pem.Block{
+			var pembts []byte
+			var pubkey ssh.PublicKey
+
+			switch algo {
+			case "ed25519":
+				pvtKey := ed25519.NewKeyFromSeed(seed)
+				pembts = pem.EncodeToMemory(&pem.Block{
 					Type:  "OPENSSH PRIVATE KEY",
 					Bytes: edkey.MarshalED25519PrivateKey(pvtKey),
-				}),
+				})
+				pubkey, err = ssh.NewPublicKey(pvtKey.Public())
+				if err != nil {
+					return fmt.Errorf("could not prepare public key: %w", err)
+				}
+			default:
+				return fmt.Errorf("unsupported key type: %q", algo)
+			}
+
+			if err := os.WriteFile(
+				keypath,
+				pembts,
 				0o600,
 			); err != nil {
 				return fmt.Errorf("failed to write private key: %w", err)
 			}
 
-			pubKey, err := ssh.NewPublicKey(pvtKey.Public())
-			if err != nil {
-				return fmt.Errorf("could not prepare public key: %w", err)
-			}
-
 			if err := os.WriteFile(
 				keypath+".pub",
-				ssh.MarshalAuthorizedKey(pubKey),
+				ssh.MarshalAuthorizedKey(pubkey),
 				0o655,
 			); err != nil {
 				return fmt.Errorf("failed to write public key: %w", err)
@@ -119,6 +129,7 @@ func init() {
 
 	restoreCmd.PersistentFlags().StringVarP(&keypath, "key", "k", "", "Path to where you want to save the key")
 	restoreCmd.PersistentFlags().StringVarP(&words, "words", "w", "", "Mnemonic words given by the backup command")
+	restoreCmd.PersistentFlags().StringVarP(&algo, "algo", "a", "ed25519", "Key algorithm")
 	_ = restoreCmd.MarkFlagRequired("key")
 	_ = restoreCmd.MarkFlagRequired("words")
 }
