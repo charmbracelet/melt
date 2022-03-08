@@ -47,6 +47,11 @@ func TestMaybeFile(t *testing.T) {
 		is := is.New(t)
 		is.Equal("strings", maybeFile("strings"))
 	})
+
+	t.Run("stdin", func(t *testing.T) {
+		is := is.New(t)
+		is.Equal("", maybeFile("-"))
+	})
 }
 
 func sha256sum(tb testing.TB, path string) string {
