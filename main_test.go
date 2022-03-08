@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,36 +9,35 @@ import (
 )
 
 func TestBackupRestoreKnownKey(t *testing.T) {
-	const mnemonic = `
+	const expectedMnemonic = `
 		model tone century code pilot
 		ball polar sauce machine crisp
 		plate soccer salon awake monkey
 		own install all broccoli marine
 		print smart square impact
 	`
+	const expectedSum = "4ec2b1e65bb86ef635991c3e31341c3bdaf6862e9b1efcde0a9c0307081ffc4c"
 
 	t.Run("backup", func(t *testing.T) {
 		is := is.New(t)
-		words, err := backup("testdata/test_ed25519")
+		mnemonic, sum, err := backup("testdata/test_ed25519")
 		is.NoErr(err)
-		is.Equal(words, strings.Join(strings.Fields(mnemonic), " "))
+		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
+		is.Equal(sum, expectedSum)
 	})
 
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(path, mnemonic, "ed25519"))
+		sum, err := restore(path, expectedMnemonic, "ed25519")
+		is.NoErr(err)
+		is.Equal(sum, expectedSum)
+	})
+}
 
-		var digests []string
-		for _, f := range []string{path, "testdata/test_ed25519"} {
-			digest := sha256.New()
-			bts, err := os.ReadFile(f)
-			is.NoErr(err)
-			_, err = digest.Write(bts)
-			is.NoErr(err)
-			digests = append(digests, string(digest.Sum(nil)))
-		}
-
-		is.Equal(digests[0], digests[1])
+func TestRestore(t *testing.T) {
+	t.Run("invalid arg", func(t *testing.T) {
+		_, err := restore(t.TempDir(), "does not matter", "rsa")
+		is.New(t).True(err != nil)
 	})
 }

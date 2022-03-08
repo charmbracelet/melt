@@ -2,6 +2,8 @@ package main
 
 import (
 	"crypto/ed25519"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -14,6 +16,10 @@ import (
 )
 
 var (
+	headerStyle   = lipgloss.NewStyle().Align(lipgloss.Center).Italic(true)
+	mnemonicStyle = lipgloss.NewStyle().Align(lipgloss.Center).Bold(true).Foreground(lipgloss.Color("63")).Margin(1).Width(60)
+	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
+
 	rootCmd = &coral.Command{
 		Use:          "keys",
 		Short:        "Backup and restore SSH keys using a mnemonic",
@@ -24,27 +30,16 @@ var (
 		Use:   "backup",
 		Short: "Backup a SSH private key",
 		RunE: func(cmd *coral.Command, args []string) error {
-			words, err := backup(keypath)
+			words, sum, err := backup(keypath)
 			if err != nil {
 				return err
 			}
-			fmt.Println(
-				lipgloss.NewStyle().
-					Align(lipgloss.Center).
-					Italic(true).
-					Render(`Success!
-You can now use the words bellow to recreate your key usint the 'keys restore' command.
-Store them somewhere safe, print or memorize them.`),
-			)
-			fmt.Println(
-				lipgloss.NewStyle().
-					Align(lipgloss.Center).
-					Bold(true).
-					Foreground(lipgloss.Color("63")).
-					Margin(1).
-					Width(60).
-					Render(words),
-			)
+			fmt.Println(headerStyle.Render(fmt.Sprintf(`Success!
+You can now use the words bellow to recreate your key using the 'keys restore' command.
+Store them somewhere safe, print or memorize them.
+
+For the record, the original key sha256sum is %s`, sum)))
+			fmt.Println(mnemonicStyle.Render(words))
 
 			return nil
 		},
@@ -56,14 +51,13 @@ Store them somewhere safe, print or memorize them.`),
 		Use:   "restore",
 		Short: "Recreate a key using the given mnemonic words",
 		RunE: func(cmd *coral.Command, args []string) error {
-			if err := restore(keypath, words, algo); err != nil {
+			sum, err := restore(keypath, words, algo)
+			if err != nil {
 				return err
 			}
 
-			fmt.Println(
-				lipgloss.NewStyle().
-					Bold(true).
-					Render(fmt.Sprintf("Written keys to %s and %[1]s.pub.", keypath)),
+			fmt.Println(restoreStyle.Render(fmt.Sprintf(`Restored keys to %s and %[1]s.pub.
+sha256sum is %s`, keypath, sum)),
 			)
 			return nil
 		},
@@ -90,15 +84,15 @@ func main() {
 	}
 }
 
-func backup(path string) (string, error) {
+func backup(path string) (string, string, error) {
 	bts, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("could not read key: %w", err)
+		return "", "", fmt.Errorf("could not read key: %w", err)
 	}
 
 	key, err := ssh.ParseRawPrivateKey(bts)
 	if err != nil {
-		return "", fmt.Errorf("could not parse key: %w", err)
+		return "", "", fmt.Errorf("could not parse key: %w", err)
 	}
 
 	var seed []byte
@@ -106,21 +100,22 @@ func backup(path string) (string, error) {
 	case *ed25519.PrivateKey:
 		seed = key.Seed()
 	default:
-		return "", fmt.Errorf("unknown key type: %v", key)
+		return "", "", fmt.Errorf("unknown key type: %v", key)
 	}
 
 	words, err := bip39.NewMnemonic(seed)
 	if err != nil {
-		return "", fmt.Errorf("could not create a mnemonic for %s: %w", path, err)
+		return "", "", fmt.Errorf("could not create a mnemonic for %s: %w", path, err)
 	}
 
-	return words, nil
+	sum, err := sha256sum(bts)
+	return words, sum, err
 }
 
-func restore(path, mnemonic, keyType string) error {
+func restore(path, mnemonic, keyType string) (string, error) {
 	seed, err := bip39.EntropyFromMnemonic(mnemonic)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var bts []byte
@@ -135,19 +130,27 @@ func restore(path, mnemonic, keyType string) error {
 		})
 		pubkey, err = ssh.NewPublicKey(pvtKey.Public())
 		if err != nil {
-			return fmt.Errorf("could not prepare public key: %w", err)
+			return "", fmt.Errorf("could not prepare public key: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported key type: %q", keyType)
+		return "", fmt.Errorf("unsupported key type: %q", keyType)
 	}
 
 	if err := os.WriteFile(path, bts, 0o600); err != nil {
-		return fmt.Errorf("failed to write private key: %w", err)
+		return "", fmt.Errorf("failed to write private key: %w", err)
 	}
 
 	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o655); err != nil {
-		return fmt.Errorf("failed to write public key: %w", err)
+		return "", fmt.Errorf("failed to write public key: %w", err)
 	}
 
-	return nil
+	return sha256sum(bts)
+}
+
+func sha256sum(bts []byte) (string, error) {
+	digest := sha256.New()
+	if _, err := digest.Write(bts); err != nil {
+		return "", fmt.Errorf("failed to sha256sum key: %w", err)
+	}
+	return hex.EncodeToString(digest.Sum(nil)), nil
 }
