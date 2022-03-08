@@ -20,25 +20,42 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	const expectedSum = "ba34175ef608633b29f046b40cce596dd221347b77abba40763eef2e7ae51fe9"
 
 	t.Run("backup", func(t *testing.T) {
+		mnemonic, err := backup("testdata/id_ed25519", nil)
 		is := is.New(t)
-		mnemonic, err := backup("testdata/id_ed25519")
 		is.NoErr(err)
 		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
 	})
 
 	t.Run("backup file that does not exist", func(t *testing.T) {
-		_, err := backup("nope")
+		_, err := backup("nope", nil)
 		is.New(t).True(err != nil)
 	})
 
 	t.Run("backup invalid ssh key", func(t *testing.T) {
-		_, err := backup("testdata/not-a-key")
+		_, err := backup("testdata/not-a-key", nil)
 		is.New(t).True(err != nil)
 	})
 
 	t.Run("backup key of another type", func(t *testing.T) {
-		_, err := backup("testdata/id_rsa")
+		_, err := backup("testdata/id_rsa", nil)
 		is.New(t).True(err != nil)
+	})
+
+	t.Run("backup key without password", func(t *testing.T) {
+		_, err := backup("testdata/pwd_id_ed25519", nil)
+		is := is.New(t)
+		is.True(err != nil)
+	})
+
+	t.Run("backup key with password", func(t *testing.T) {
+		const expectedMnemonic = `assume knee laundry logic soft fit quantum
+			puppy vault snow author alien famous comfort neglect habit
+			emerge fabric trophy wine hold inquiry clown govern`
+
+		mnemonic, err := backup("testdata/pwd_id_ed25519", []byte("asd"))
+		is := is.New(t)
+		is.NoErr(err)
+		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
 	})
 
 	t.Run("restore", func(t *testing.T) {

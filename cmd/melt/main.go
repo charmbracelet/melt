@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/ed25519"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/muesli/coral"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/term"
 )
 
 var (
@@ -31,7 +33,7 @@ var (
 		Example: "melt backup ~/.ssh/id_ed25519",
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
-			mnemonic, err := backup(args[0])
+			mnemonic, err := backup(args[0], nil)
 			if err != nil {
 				return err
 			}
@@ -92,14 +94,28 @@ func maybeFile(s string) string {
 	return string(bts)
 }
 
-func backup(path string) (string, error) {
+func backup(path string, pwd []byte) (string, error) {
 	bts, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
 
-	key, err := ssh.ParseRawPrivateKey(bts)
+	var key interface{}
+	if pwd == nil {
+		key, err = ssh.ParseRawPrivateKey(bts)
+	} else {
+		key, err = ssh.ParseRawPrivateKeyWithPassphrase(bts, pwd)
+	}
 	if err != nil {
+		pwderr := &ssh.PassphraseMissingError{}
+		if errors.As(err, &pwderr) {
+			fmt.Fprintf(os.Stderr, "Enter the password to decrypt %q: ", path)
+			pwd, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				return "", fmt.Errorf("could not read password for key: %w", err)
+			}
+			return backup(path, pwd)
+		}
 		return "", fmt.Errorf("could not parse key: %w", err)
 	}
 
