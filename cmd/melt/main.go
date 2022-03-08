@@ -49,7 +49,6 @@ Store them somewhere safe, print or memorize them.`))
 	}
 
 	mnemonic   string
-	algo       string
 	restoreCmd = &coral.Command{
 		Use:     "restore",
 		Short:   "Recreate a key using the given mnemonic words",
@@ -70,7 +69,6 @@ func init() {
 	rootCmd.AddCommand(backupCmd, restoreCmd)
 
 	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "-", "Mnemonic set of words given by the backup command")
-	restoreCmd.PersistentFlags().StringVar(&algo, "algo", "ed25519", "Key algorithm")
 	_ = restoreCmd.MarkFlagRequired("mnemonic")
 }
 
