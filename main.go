@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	headerStyle   = lipgloss.NewStyle().Align(lipgloss.Center).Italic(true)
-	mnemonicStyle = lipgloss.NewStyle().Align(lipgloss.Center).Bold(true).Foreground(lipgloss.Color("63")).Margin(1).Width(60)
+	headerStyle   = lipgloss.NewStyle().Italic(true)
+	mnemonicStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("63")).Margin(1).Width(60)
 	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
 
 	rootCmd = &coral.Command{
@@ -34,11 +34,13 @@ var (
 			if err != nil {
 				return err
 			}
-			fmt.Println(headerStyle.Render(fmt.Sprintf(`Success!
+			fmt.Println(headerStyle.Render(fmt.Sprintf(`
+Success!!!
+
 You can now use the words bellow to recreate your key using the 'keys restore' command.
 Store them somewhere safe, print or memorize them.
 
-For the record, the original key sha256sum is %s`, sum)))
+For the record, the original key sha256sum is %s.`, sum)))
 			fmt.Println(mnemonicStyle.Render(words))
 
 			return nil
