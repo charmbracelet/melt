@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/charmbracelet/lipgloss v0.5.0
 	github.com/matryer/is v1.4.0
+	github.com/mattn/go-isatty v0.0.14
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/muesli/coral v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
@@ -14,7 +15,6 @@ require (
 require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/muesli/reflow v0.2.1-0.20210115123740-9e1d0d53df68 // indirect
 	github.com/muesli/termenv v0.11.1-0.20220204035834-5ac8409525e0 // indirect
