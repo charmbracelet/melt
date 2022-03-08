@@ -24,29 +24,10 @@ var (
 		Use:   "backup",
 		Short: "Backup a SSH private key",
 		RunE: func(cmd *coral.Command, args []string) error {
-			bts, err := os.ReadFile(keypath)
+			words, err := backup(keypath)
 			if err != nil {
-				return fmt.Errorf("could not read key: %w", err)
+				return err
 			}
-
-			key, err := ssh.ParseRawPrivateKey(bts)
-			if err != nil {
-				return fmt.Errorf("could not parse key: %w", err)
-			}
-
-			var seed []byte
-			switch key := key.(type) {
-			case *ed25519.PrivateKey:
-				seed = key.Seed()
-			default:
-				return fmt.Errorf("unknown key type: %v", key)
-			}
-
-			words, err := bip39.NewMnemonic(seed)
-			if err != nil {
-				return fmt.Errorf("could not create a mnemonic for %s: %w", keypath, err)
-			}
-
 			fmt.Println(
 				lipgloss.NewStyle().
 					Align(lipgloss.Center).
@@ -75,47 +56,15 @@ Store them somewhere safe, print or memorize them.`),
 		Use:   "restore",
 		Short: "Recreate a key using the given mnemonic words",
 		RunE: func(cmd *coral.Command, args []string) error {
-			seed, err := bip39.EntropyFromMnemonic(words)
-			if err != nil {
+			if err := restore(keypath, words, algo); err != nil {
 				return err
 			}
 
-			var pembts []byte
-			var pubkey ssh.PublicKey
-
-			switch algo {
-			case "ed25519":
-				pvtKey := ed25519.NewKeyFromSeed(seed)
-				pembts = pem.EncodeToMemory(&pem.Block{
-					Type:  "OPENSSH PRIVATE KEY",
-					Bytes: edkey.MarshalED25519PrivateKey(pvtKey),
-				})
-				pubkey, err = ssh.NewPublicKey(pvtKey.Public())
-				if err != nil {
-					return fmt.Errorf("could not prepare public key: %w", err)
-				}
-			default:
-				return fmt.Errorf("unsupported key type: %q", algo)
-			}
-
-			if err := os.WriteFile(
-				keypath,
-				pembts,
-				0o600,
-			); err != nil {
-				return fmt.Errorf("failed to write private key: %w", err)
-			}
-
-			if err := os.WriteFile(
-				keypath+".pub",
-				ssh.MarshalAuthorizedKey(pubkey),
-				0o655,
-			); err != nil {
-				return fmt.Errorf("failed to write public key: %w", err)
-			}
-
-			fmt.Println(lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("Written keys to %s and %[1]s.pub", keypath)))
-
+			fmt.Println(
+				lipgloss.NewStyle().
+					Bold(true).
+					Render(fmt.Sprintf("Written keys to %s and %[1]s.pub.", keypath)),
+			)
 			return nil
 		},
 	}
@@ -139,32 +88,66 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	// srcPem, err := os.ReadFile("test_ed25519")
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	//
-	// srcKey, err := ssh.ParseRawPrivateKey(srcPem)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	//
-	// words, err := bip39.NewMnemonic((srcKey.(*ed25519.PrivateKey)).Seed())
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// log.Println("words:", words)
-	//
-	// recovSeed, err := bip39.EntropyFromMnemonic(words)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	//
-	// recovKey := ed25519.NewKeyFromSeed(recovSeed)
-	// recovPem := pem.EncodeToMemory(&pem.Block{
-	// 	Type:  "OPENSSH PRIVATE KEY",
-	// 	Bytes: edkey.MarshalED25519PrivateKey(recovKey),
-	// })
-	//
-	// log.Println("keys match?", string(recovPem) == string(srcPem))
+}
+
+func backup(path string) (string, error) {
+	bts, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("could not read key: %w", err)
+	}
+
+	key, err := ssh.ParseRawPrivateKey(bts)
+	if err != nil {
+		return "", fmt.Errorf("could not parse key: %w", err)
+	}
+
+	var seed []byte
+	switch key := key.(type) {
+	case *ed25519.PrivateKey:
+		seed = key.Seed()
+	default:
+		return "", fmt.Errorf("unknown key type: %v", key)
+	}
+
+	words, err := bip39.NewMnemonic(seed)
+	if err != nil {
+		return "", fmt.Errorf("could not create a mnemonic for %s: %w", path, err)
+	}
+
+	return words, nil
+}
+
+func restore(path, mnemonic, keyType string) error {
+	seed, err := bip39.EntropyFromMnemonic(mnemonic)
+	if err != nil {
+		return err
+	}
+
+	var bts []byte
+	var pubkey ssh.PublicKey
+
+	switch keyType {
+	case "ed25519":
+		pvtKey := ed25519.NewKeyFromSeed(seed)
+		bts = pem.EncodeToMemory(&pem.Block{
+			Type:  "OPENSSH PRIVATE KEY",
+			Bytes: edkey.MarshalED25519PrivateKey(pvtKey),
+		})
+		pubkey, err = ssh.NewPublicKey(pvtKey.Public())
+		if err != nil {
+			return fmt.Errorf("could not prepare public key: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported key type: %q", keyType)
+	}
+
+	if err := os.WriteFile(path, bts, 0o600); err != nil {
+		return fmt.Errorf("failed to write private key: %w", err)
+	}
+
+	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o655); err != nil {
+		return fmt.Errorf("failed to write public key: %w", err)
+	}
+
+	return nil
 }
