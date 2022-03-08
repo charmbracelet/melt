@@ -25,41 +25,52 @@ var (
 		Short:        "Backup and restore SSH keys using a mnemonic",
 		SilenceUsage: true,
 	}
-	keypath   string
 	backupCmd = &coral.Command{
-		Use:   "backup",
-		Short: "Backup a SSH private key",
+		Use:     "backup",
+		Short:   "Backup a SSH private key",
+		Example: "keys backup ~/.ssh/id_ed25519",
+		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
-			words, sum, err := backup(keypath)
+			mnemonic, sum, err := backup(args[0])
 			if err != nil {
 				return err
 			}
 			fmt.Println(headerStyle.Render(fmt.Sprintf(`
 Success!!!
 
+1. Key's sha256 checksum:
+
+%s	%s
+
+2. mnemonic set of words
+
 You can now use the words bellow to recreate your key using the 'keys restore' command.
 Store them somewhere safe, print or memorize them.
-
-For the record, the original key sha256sum is %s.`, sum)))
-			fmt.Println(mnemonicStyle.Render(words))
-
+`, args[0], sum)))
+			fmt.Println(mnemonicStyle.Render(mnemonic))
 			return nil
 		},
 	}
 
-	words      string
+	mnemonic   string
 	algo       string
 	restoreCmd = &coral.Command{
-		Use:   "restore",
-		Short: "Recreate a key using the given mnemonic words",
+		Use:     "restore",
+		Short:   "Recreate a key using the given mnemonic words",
+		Example: "keys restore --mnemonic \"list of words\" ./id_ed25519_restored",
+		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
-			sum, err := restore(keypath, words, algo)
+			sum, err := restore(args[0], maybeFile(mnemonic), algo)
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(restoreStyle.Render(fmt.Sprintf(`Restored keys to %s and %[1]s.pub.
-sha256sum is %s`, keypath, sum)),
+			fmt.Println(restoreStyle.Render(fmt.Sprintf(`Successfully restored keys to '%[1]s' and '%[1]s.pub'.
+
+The private key's sha256sum is:
+
+%[1]s	%s
+`, args[0], sum)),
 			)
 			return nil
 		},
@@ -69,14 +80,9 @@ sha256sum is %s`, keypath, sum)),
 func init() {
 	rootCmd.AddCommand(backupCmd, restoreCmd)
 
-	backupCmd.PersistentFlags().StringVarP(&keypath, "key", "k", "", "Path to the key you want to backup")
-	_ = backupCmd.MarkFlagRequired("key")
-
-	restoreCmd.PersistentFlags().StringVarP(&keypath, "key", "k", "", "Path to where you want to save the key")
-	restoreCmd.PersistentFlags().StringVarP(&words, "words", "w", "", "Mnemonic words given by the backup command")
-	restoreCmd.PersistentFlags().StringVarP(&algo, "algo", "a", "ed25519", "Key algorithm")
-	_ = restoreCmd.MarkFlagRequired("key")
-	_ = restoreCmd.MarkFlagRequired("words")
+	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "", "Mnemonic set of words given by the backup command")
+	restoreCmd.PersistentFlags().StringVar(&algo, "algo", "ed25519", "Key algorithm")
+	_ = restoreCmd.MarkFlagRequired("mnemonic")
 }
 
 func main() {
@@ -112,6 +118,14 @@ func backup(path string) (string, string, error) {
 
 	sum, err := sha256sum(bts)
 	return words, sum, err
+}
+
+func maybeFile(s string) string {
+	bts, err := os.ReadFile(s)
+	if err != nil {
+		return s
+	}
+	return string(bts)
 }
 
 func restore(path, mnemonic, keyType string) (string, error) {
