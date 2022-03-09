@@ -45,13 +45,13 @@ var (
 	rootCmd = &coral.Command{
 		Use: "melt",
 		Example: `  melt ~/.ssh/id_ed25519
-  melt ~/.ssh/id_ed25519 > mnemonic
-  melt restore --mnemonic \"list of words\" ./restored_id25519
-  melt restore ./restored_id25519 < mnemonic`,
-		Short: "Backup a SSH private key to a mnemonic set of keys",
-		Long: `melt uses bip39 to create a mnemonic set of words that represents your SSH keys.
+  melt ~/.ssh/id_ed25519 > seed
+  melt restore --seed "list of words" ./restored_id25519
+  melt restore ./restored_id25519 < seed`,
+		Short: "Backup a SSH private key to a set of seed words",
+		Long: `melt uses bip39 to create a set of seed words that can be used to rebuild your SSH keys.
 
-You can then use those words to restore your private key at any time.`,
+You can use that seed to restore your public and private keys.`,
 		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
@@ -69,7 +69,7 @@ You can then use those words to restore your private key at any time.`,
 				line := lineStyle.Render(strings.Repeat("─", headerGap))
 				renderBlock(&b, baseStyle, w, header+line)
 
-				renderBlock(&b, baseStyle, w, "You can use the mnemonic words below to recreate your key. Store them somewhere safe, print them, or memorize them.")
+				renderBlock(&b, baseStyle, w, "Your key has been melted down to the seed words below. Store them somewhere safe. You can use melt to recover your key at any time.")
 				renderBlock(&b, mnemonicStyle, w, mnemonic)
 				renderBlock(&b, baseStyle, w, "To recreate this key run:")
 
@@ -78,7 +78,7 @@ You can then use those words to restore your private key at any time.`,
 				const cmdIndent = 4
 				cmd := cmdStyle.Copy().
 					Width(w - lipgloss.Width(cmdEOL) - cmdIndent - 4).
-					Render(os.Args[0] + " restore ./key --mnemonic \"" + mnemonic + "\"")
+					Render(os.Args[0] + " restore ./key --seed \"" + mnemonic + "\"")
 				cmdLines := strings.Split(cmd, "\n")
 				for i, l := range cmdLines {
 					if i > 0 {
@@ -103,9 +103,9 @@ You can then use those words to restore your private key at any time.`,
 	mnemonic   string
 	restoreCmd = &coral.Command{
 		Use:   "restore",
-		Short: "Recreate a key using the given mnemonic words",
-		Example: `  melt restore --mnemonic \"list of words\" ./restored_id25519
-  melt restore ./restored_id25519 < mnemonic`,
+		Short: "Recreate a key using the given seed words",
+		Example: `  melt restore --seed \"list of words\" ./restored_id25519
+  melt restore ./restored_id25519 < seed`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
@@ -142,8 +142,8 @@ You can then use those words to restore your private key at any time.`,
 func init() {
 	rootCmd.AddCommand(restoreCmd, manCmd)
 
-	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "-", "Mnemonic set of words given by the backup command")
-	_ = restoreCmd.MarkFlagRequired("mnemonic")
+	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "seed", "s", "-", "Seed words")
+	_ = restoreCmd.MarkFlagRequired("seed")
 }
 
 func main() {
