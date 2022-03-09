@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
+	"sync"
 
 	"github.com/caarlos0/sshmarshal"
 	"github.com/charmbracelet/lipgloss"
@@ -19,10 +21,26 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	maxWidth    = 72
+	cmdMaxWidth = 40
+)
+
 var (
-	headerStyle   = lipgloss.NewStyle().Italic(true)
-	mnemonicStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("63")).Margin(1).Width(60)
-	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
+	widthOnce      sync.Once
+	terminalWidth  int
+	docStyle       = lipgloss.NewStyle().Margin(1, 2)
+	baseStyle      = lipgloss.NewStyle().Margin(0, 0, 1, 2)
+	headerStyle    = lipgloss.NewStyle()
+	lineStyle      = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "237"})
+	backslashStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "239"})
+	mnemonicStyle  = baseStyle.Copy().
+			Foreground(lipgloss.Color("204")).
+			Background(lipgloss.Color("234")).
+			Padding(1, 2)
+	cmdStyle     = baseStyle.Copy()
+	restoreStyle = lipgloss.NewStyle().Bold(true).Margin(1)
+	keyStyle     = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "36"})
 
 	rootCmd = &coral.Command{
 		Use: "melt",
@@ -42,11 +60,39 @@ You can then use those words to restore your private key at any time.`,
 				return err
 			}
 			if isatty.IsTerminal(os.Stdout.Fd()) {
-				fmt.Println(headerStyle.Render(`Success!!!
+				b := strings.Builder{}
+				w := getWidth(maxWidth)
 
-You can now use the words bellow to recreate your key using the 'melt restore' command.
-Store them somewhere safe, print or memorize them.`))
-				fmt.Println(mnemonicStyle.Render(mnemonic))
+				b.WriteRune('\n')
+				header := headerStyle.Render("Success! ")
+				headerGap := w - lipgloss.Width(header)
+				line := lineStyle.Render(strings.Repeat("─", headerGap))
+				renderBlock(&b, baseStyle, w, header+line)
+
+				renderBlock(&b, baseStyle, w, "You can use the mnemonic words below to recreate your key. Store them somewhere safe, print them, or memorize them.")
+				renderBlock(&b, mnemonicStyle, w, mnemonic)
+				renderBlock(&b, baseStyle, w, "To recreate this key run:")
+
+				// Restore command
+				cmdEOL := backslashStyle.Render(" \\")
+				const cmdIndent = 4
+				cmd := cmdStyle.Copy().
+					Width(w - lipgloss.Width(cmdEOL) - cmdIndent - 4).
+					Render(os.Args[0] + " restore ./key --mnemonic \"" + mnemonic + "\"")
+				cmdLines := strings.Split(cmd, "\n")
+				for i, l := range cmdLines {
+					if i > 0 {
+						b.WriteString(strings.Repeat(" ", cmdIndent))
+					}
+					b.WriteString(strings.TrimRight(l, " "))
+					if i < len(cmdLines)-2 {
+						b.WriteString(cmdEOL)
+						b.WriteRune('\n')
+					}
+				}
+				b.WriteRune('\n')
+
+				fmt.Println(b.String())
 			} else {
 				fmt.Print(mnemonic)
 			}
@@ -67,7 +113,9 @@ Store them somewhere safe, print or memorize them.`))
 				return err
 			}
 
-			fmt.Println(restoreStyle.Render(fmt.Sprintf(`Successfully restored keys to '%[1]s' and '%[1]s.pub'!`, args[0])))
+			pub := keyStyle.Render(args[0])
+			priv := keyStyle.Render(args[0] + ".pub")
+			fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s!", pub, priv)))
 			return nil
 		},
 	}
@@ -175,4 +223,20 @@ func restore(mnemonic, path string) error {
 		return fmt.Errorf("failed to write public key: %w", err)
 	}
 	return nil
+}
+
+func getWidth(max int) int {
+	var err error
+	widthOnce.Do(func() {
+		terminalWidth, _, err = term.GetSize(int(os.Stdout.Fd()))
+	})
+	if err != nil || terminalWidth > maxWidth {
+		return maxWidth
+	}
+	return terminalWidth
+}
+
+func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
+	io.WriteString(w, s.Copy().Width(width).Render(str))
+	io.WriteString(w, "\n")
 }
