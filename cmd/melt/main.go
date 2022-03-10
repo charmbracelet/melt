@@ -48,12 +48,11 @@ var (
 		Use: "melt",
 		Example: `  melt ~/.ssh/id_ed25519
   melt ~/.ssh/id_ed25519 > seed
-  melt restore --seed "list of words" ./restored_id25519
+  melt restore --seed "seed phrase" ./restored_id25519
   melt restore ./restored_id25519 < seed`,
-		Short: "Backup a SSH private key to a set of seed words",
-		Long: `melt uses bip39 to create a set of seed words that can be used to rebuild your SSH keys.
-
-You can use that seed to restore your public and private keys.`,
+		Short: "Generate a seed phrase from an SSH key",
+		Long: `melt generates a seed phrase from an SSH key. That phrase can
+be used to rebuild your public and private keys.`,
 		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
@@ -67,7 +66,7 @@ You can use that seed to restore your public and private keys.`,
 
 				b.WriteRune('\n')
 				meltCmd := cmdStyle.Render(os.Args[0])
-				renderBlock(&b, baseStyle, w, fmt.Sprintf("OK! Your key has been melted down to the seed words below. Store them somewhere safe. You can use %s to recover your key at any time.", meltCmd))
+				renderBlock(&b, baseStyle, w, fmt.Sprintf("OK! Your key has been melted down to the seed phrase below. Store it somewhere safe. You can use %s to recover your key at any time.", meltCmd))
 				renderBlock(&b, mnemonicStyle, w, mnemonic)
 				renderBlock(&b, baseStyle, w, "To recreate this key run:")
 
@@ -100,8 +99,8 @@ You can use that seed to restore your public and private keys.`,
 	mnemonic   string
 	restoreCmd = &coral.Command{
 		Use:   "restore",
-		Short: "Recreate a key using the given seed words",
-		Example: `  melt restore --seed "list of words" ./restored_id25519
+		Short: "Recreate a key using the given seed phrase",
+		Example: `  melt restore --seed "seed phrase" ./restored_id25519
   melt restore ./restored_id25519 < seed`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
@@ -139,7 +138,7 @@ You can use that seed to restore your public and private keys.`,
 func init() {
 	rootCmd.AddCommand(restoreCmd, manCmd)
 
-	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "seed", "s", "-", "Seed words")
+	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "seed", "s", "-", "Seed phrase")
 	_ = restoreCmd.MarkFlagRequired("seed")
 }
 
