@@ -23,14 +23,10 @@ import (
 )
 
 const (
-	maxWidth    = 72
-	cmdMaxWidth = 40
+	maxWidth = 72
 )
 
 var (
-	terminalWidth int
-
-	docStyle  = lipgloss.NewStyle().Margin(1, 2)
 	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2)
 	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
 	cmdStyle  = lipgloss.NewStyle().
@@ -41,7 +37,6 @@ var (
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
 			Padding(1, 2)
-	borderStyle  = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "236"})
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	rootCmd = &coral.Command{
@@ -222,17 +217,16 @@ func restore(mnemonic, path string) error {
 }
 
 func getWidth(max int) int {
-	var err error
-	terminalWidth, _, err = term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || terminalWidth > maxWidth {
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || w > max {
 		return maxWidth
 	}
-	return terminalWidth
+	return w
 }
 
 func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
-	io.WriteString(w, s.Copy().Width(width).Render(str))
-	io.WriteString(w, "\n")
+	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
+	_, _ = io.WriteString(w, "\n")
 }
 
 func completeColor(truecolor, ansi256, ansi string) string {
