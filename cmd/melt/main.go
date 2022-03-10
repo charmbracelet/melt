@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/caarlos0/sshmarshal"
 	"github.com/charmbracelet/lipgloss"
@@ -16,7 +15,9 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/muesli/coral"
 	mcoral "github.com/muesli/mango-coral"
+	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
+	"github.com/muesli/termenv"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -27,20 +28,21 @@ const (
 )
 
 var (
-	widthOnce      sync.Once
-	terminalWidth  int
-	docStyle       = lipgloss.NewStyle().Margin(1, 2)
-	baseStyle      = lipgloss.NewStyle().Margin(0, 0, 1, 2)
-	headerStyle    = lipgloss.NewStyle()
-	lineStyle      = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "237"})
-	backslashStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "239"})
-	mnemonicStyle  = baseStyle.Copy().
-			Foreground(lipgloss.Color("204")).
-			Background(lipgloss.Color("234")).
+	terminalWidth int
+
+	docStyle  = lipgloss.NewStyle().Margin(1, 2)
+	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2)
+	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
+	cmdStyle  = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
+			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
+			Padding(0, 1)
+	mnemonicStyle = baseStyle.Copy().
+			Foreground(violet).
+			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
 			Padding(1, 2)
-	cmdStyle     = baseStyle.Copy()
-	restoreStyle = lipgloss.NewStyle().Bold(true).Margin(1)
-	keyStyle     = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "36"})
+	borderStyle  = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "", Dark: "236"})
+	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	rootCmd = &coral.Command{
 		Use: "melt",
@@ -64,28 +66,23 @@ You can use that seed to restore your public and private keys.`,
 				w := getWidth(maxWidth)
 
 				b.WriteRune('\n')
-				header := headerStyle.Render("Success! ")
-				headerGap := w - lipgloss.Width(header)
-				line := lineStyle.Render(strings.Repeat("─", headerGap))
-				renderBlock(&b, baseStyle, w, header+line)
-
-				renderBlock(&b, baseStyle, w, "Your key has been melted down to the seed words below. Store them somewhere safe. You can use melt to recover your key at any time.")
+				meltCmd := cmdStyle.Render(os.Args[0])
+				renderBlock(&b, baseStyle, w, fmt.Sprintf("OK! Your key has been melted down to the seed words below. Store them somewhere safe. You can use %s to recover your key at any time.", meltCmd))
 				renderBlock(&b, mnemonicStyle, w, mnemonic)
 				renderBlock(&b, baseStyle, w, "To recreate this key run:")
 
-				// Restore command
-				cmdEOL := backslashStyle.Render(" \\")
-				const cmdIndent = 4
-				cmd := cmdStyle.Copy().
-					Width(w - lipgloss.Width(cmdEOL) - cmdIndent - 4).
-					Render(os.Args[0] + " restore ./key --seed \"" + mnemonic + "\"")
+				// Build formatted restore command
+				const cmdEOL = " \\"
+				cmd := wordwrap.String(
+					os.Args[0]+` restore ./my-key --seed "`+mnemonic+`"`,
+					w-lipgloss.Width(cmdEOL)-baseStyle.GetHorizontalFrameSize()*2,
+				)
+				leftPad := strings.Repeat(" ", baseStyle.GetMarginLeft())
 				cmdLines := strings.Split(cmd, "\n")
 				for i, l := range cmdLines {
-					if i > 0 {
-						b.WriteString(strings.Repeat(" ", cmdIndent))
-					}
-					b.WriteString(strings.TrimRight(l, " "))
-					if i < len(cmdLines)-2 {
+					b.WriteString(leftPad)
+					b.WriteString(l)
+					if i < len(cmdLines)-1 {
 						b.WriteString(cmdEOL)
 						b.WriteRune('\n')
 					}
@@ -104,7 +101,7 @@ You can use that seed to restore your public and private keys.`,
 	restoreCmd = &coral.Command{
 		Use:   "restore",
 		Short: "Recreate a key using the given seed words",
-		Example: `  melt restore --seed \"list of words\" ./restored_id25519
+		Example: `  melt restore --seed "list of words" ./restored_id25519
   melt restore ./restored_id25519 < seed`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
@@ -113,9 +110,9 @@ You can use that seed to restore your public and private keys.`,
 				return err
 			}
 
-			pub := keyStyle.Render(args[0])
-			priv := keyStyle.Render(args[0] + ".pub")
-			fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s!", pub, priv)))
+			pub := keyPathStyle.Render(args[0])
+			priv := keyPathStyle.Render(args[0] + ".pub")
+			fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s", pub, priv)))
 			return nil
 		},
 	}
@@ -227,9 +224,7 @@ func restore(mnemonic, path string) error {
 
 func getWidth(max int) int {
 	var err error
-	widthOnce.Do(func() {
-		terminalWidth, _, err = term.GetSize(int(os.Stdout.Fd()))
-	})
+	terminalWidth, _, err = term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth > maxWidth {
 		return maxWidth
 	}
@@ -239,4 +234,14 @@ func getWidth(max int) int {
 func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
 	io.WriteString(w, s.Copy().Width(width).Render(str))
 	io.WriteString(w, "\n")
+}
+
+func completeColor(truecolor, ansi256, ansi string) string {
+	switch lipgloss.ColorProfile() {
+	case termenv.TrueColor:
+		return truecolor
+	case termenv.ANSI256:
+		return ansi256
+	}
+	return ansi
 }
