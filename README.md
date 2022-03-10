@@ -1,24 +1,23 @@
 # Melt
 
-Backup and restore a SSH private key to mnemonic word set you can memorize.
-
-## Usage
-
-You check its `backup` and `restore` subcommands:
+Backup and restore SSH private keys using memorizable seed phrases.
 
 ```shell
+# Generate a seed phrase from an SSH key
 melt ~/.ssh/id_ed25519
-melt restore --mnemonic "words from backup" ./recovered_id_ed25519
+
+# Rebuild the key from the seed phrase
+melt restore ./my-key --seed "seed phrase"
 ```
 
-You can also pipe to and from a file directly, e.g.:
+You can also pipe to and from a file directly:
 
 ```shell
 melt ~/.ssh/id_ed25519 > words
 melt restore ./recovered_id_ed25519 < words
 ```
 
-## How it works
+## How it Works
 
 It all comes down to the private key __seed__:
 
