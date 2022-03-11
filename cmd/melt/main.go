@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/caarlos0/sshmarshal"
 	"github.com/charmbracelet/lipgloss"
@@ -14,26 +15,39 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/muesli/coral"
 	mcoral "github.com/muesli/mango-coral"
+	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
+	"github.com/muesli/termenv"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
+const (
+	maxWidth = 72
+)
+
 var (
-	headerStyle   = lipgloss.NewStyle().Italic(true)
-	mnemonicStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("63")).Margin(1).Width(60)
-	restoreStyle  = lipgloss.NewStyle().Bold(true).Margin(1)
+	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2)
+	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
+	cmdStyle  = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
+			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
+			Padding(0, 1)
+	mnemonicStyle = baseStyle.Copy().
+			Foreground(violet).
+			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
+			Padding(1, 2)
+	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	rootCmd = &coral.Command{
 		Use: "melt",
 		Example: `  melt ~/.ssh/id_ed25519
-  melt ~/.ssh/id_ed25519 > mnemonic
-  melt restore --mnemonic \"list of words\" ./restored_id25519
-  melt restore ./restored_id25519 < mnemonic`,
-		Short: "Backup a SSH private key to a mnemonic set of keys",
-		Long: `melt uses bip39 to create a mnemonic set of words that represents your SSH keys.
-
-You can then use those words to restore your private key at any time.`,
+  melt ~/.ssh/id_ed25519 > seed
+  melt restore --seed "seed phrase" ./restored_id25519
+  melt restore ./restored_id25519 < seed`,
+		Short: "Generate a seed phrase from an SSH key",
+		Long: `melt generates a seed phrase from an SSH key. That phrase can
+be used to rebuild your public and private keys.`,
 		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
@@ -42,11 +56,34 @@ You can then use those words to restore your private key at any time.`,
 				return err
 			}
 			if isatty.IsTerminal(os.Stdout.Fd()) {
-				fmt.Println(headerStyle.Render(`Success!!!
+				b := strings.Builder{}
+				w := getWidth(maxWidth)
 
-You can now use the words bellow to recreate your key using the 'melt restore' command.
-Store them somewhere safe, print or memorize them.`))
-				fmt.Println(mnemonicStyle.Render(mnemonic))
+				b.WriteRune('\n')
+				meltCmd := cmdStyle.Render(os.Args[0])
+				renderBlock(&b, baseStyle, w, fmt.Sprintf("OK! Your key has been melted down to the seed phrase below. Store it somewhere safe. You can use %s to recover your key at any time.", meltCmd))
+				renderBlock(&b, mnemonicStyle, w, mnemonic)
+				renderBlock(&b, baseStyle, w, "To recreate this key run:")
+
+				// Build formatted restore command
+				const cmdEOL = " \\"
+				cmd := wordwrap.String(
+					os.Args[0]+` restore ./my-key --seed "`+mnemonic+`"`,
+					w-lipgloss.Width(cmdEOL)-baseStyle.GetHorizontalFrameSize()*2,
+				)
+				leftPad := strings.Repeat(" ", baseStyle.GetMarginLeft())
+				cmdLines := strings.Split(cmd, "\n")
+				for i, l := range cmdLines {
+					b.WriteString(leftPad)
+					b.WriteString(l)
+					if i < len(cmdLines)-1 {
+						b.WriteString(cmdEOL)
+						b.WriteRune('\n')
+					}
+				}
+				b.WriteRune('\n')
+
+				fmt.Println(b.String())
 			} else {
 				fmt.Print(mnemonic)
 			}
@@ -57,9 +94,9 @@ Store them somewhere safe, print or memorize them.`))
 	mnemonic   string
 	restoreCmd = &coral.Command{
 		Use:   "restore",
-		Short: "Recreate a key using the given mnemonic words",
-		Example: `  melt restore --mnemonic \"list of words\" ./restored_id25519
-  melt restore ./restored_id25519 < mnemonic`,
+		Short: "Recreate a key using the given seed phrase",
+		Example: `  melt restore --seed "seed phrase" ./restored_id25519
+  melt restore ./restored_id25519 < seed`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
@@ -67,7 +104,9 @@ Store them somewhere safe, print or memorize them.`))
 				return err
 			}
 
-			fmt.Println(restoreStyle.Render(fmt.Sprintf(`Successfully restored keys to '%[1]s' and '%[1]s.pub'!`, args[0])))
+			pub := keyPathStyle.Render(args[0])
+			priv := keyPathStyle.Render(args[0] + ".pub")
+			fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s", pub, priv)))
 			return nil
 		},
 	}
@@ -94,8 +133,8 @@ Store them somewhere safe, print or memorize them.`))
 func init() {
 	rootCmd.AddCommand(restoreCmd, manCmd)
 
-	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "mnemonic", "m", "-", "Mnemonic set of words given by the backup command")
-	_ = restoreCmd.MarkFlagRequired("mnemonic")
+	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "seed", "s", "-", "Seed phrase")
+	_ = restoreCmd.MarkFlagRequired("seed")
 }
 
 func main() {
@@ -175,4 +214,27 @@ func restore(mnemonic, path string) error {
 		return fmt.Errorf("failed to write public key: %w", err)
 	}
 	return nil
+}
+
+func getWidth(max int) int {
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || w > max {
+		return maxWidth
+	}
+	return w
+}
+
+func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
+	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
+	_, _ = io.WriteString(w, "\n")
+}
+
+func completeColor(truecolor, ansi256, ansi string) string {
+	switch lipgloss.ColorProfile() {
+	case termenv.TrueColor:
+		return truecolor
+	case termenv.ANSI256:
+		return ansi256
+	}
+	return ansi
 }
