@@ -76,6 +76,45 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	})
 }
 
+func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
+	const expectedMnemonic = `
+	いきおい ざるそば えもの せんめんじょ てあみ ていねい はったつ        
+    ろこつ すあし のぞく かまう ほくろ らくご けぶかい たおす よゆう      
+    ひめじし くたびれる ぐんたい なわばり にかい えほん せなか            
+    そいとげる
+	`
+	const expectedSum = "ba34175ef608633b29f046b40cce596dd221347b77abba40763eef2e7ae51fe9"
+	const expectedFingerprint = "SHA256:tX0ZrsNLIB/ZlRK3vy/HsWIIkyBNhYhCSGmtqtxJcWo"
+
+	// set language to Japanse
+	setLanguage("japanese")
+
+	t.Run("backup", func(t *testing.T) {
+		mnemonic, err := backup("testdata/id_ed25519", nil)
+		is := is.New(t)
+		is.NoErr(err)
+		is.Equal(mnemonic, strings.Join(strings.Fields(expectedMnemonic), " "))
+	})
+
+	t.Run("restore", func(t *testing.T) {
+		is := is.New(t)
+		path := filepath.Join(t.TempDir(), "key")
+		is.NoErr(restore(expectedMnemonic, path))
+		is.Equal(expectedSum, sha256sum(t, path+".pub"))
+
+		bts, err := os.ReadFile(path)
+		is.NoErr(err)
+
+		k, err := ssh.ParsePrivateKey(bts)
+		is.NoErr(err)
+
+		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
+	})
+
+	// set language back to English
+	setLanguage("english")
+}
+
 func TestMaybeFile(t *testing.T) {
 	t.Run("is a file", func(t *testing.T) {
 		is := is.New(t)
