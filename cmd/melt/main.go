@@ -78,7 +78,7 @@ be used to rebuild your public and private keys.`,
 				const cmdEOL = " \\"
 				var lang string
 				if language != "en" {
-					lang = fmt.Sprintf(" -l %s", language)
+					lang = fmt.Sprintf(" --language %s", language)
 				}
 				cmd := wordwrap.String(
 					os.Args[0]+` restore`+lang+` ./my-key --seed "`+mnemonic+`"`,
