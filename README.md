@@ -1,5 +1,10 @@
 # Melt
 
+<p>
+    <img src="https://stuff.charm.sh/melt/melt-header.png" width="294" alt="Melt Mascot">
+    <!-- badges here -->
+</p>
+
 Backup and restore SSH private keys using memorizable seed phrases.
 
 ```shell
