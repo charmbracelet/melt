@@ -89,6 +89,11 @@ func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 	// set language to Japanse
 	setLanguage("japanese")
 
+	// set language back to English
+	t.Cleanup(func() {
+		setLanguage("english")
+	})
+
 	t.Run("backup", func(t *testing.T) {
 		mnemonic, err := backup("testdata/id_ed25519", nil)
 		is := is.New(t)
@@ -110,9 +115,6 @@ func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 
 		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
 	})
-
-	// set language back to English
-	setLanguage("english")
 }
 
 func TestMaybeFile(t *testing.T) {
