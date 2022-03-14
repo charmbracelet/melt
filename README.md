@@ -7,6 +7,40 @@
 
 Backup and restore SSH private keys using memorizable seed phrases.
 
+<img width="1332" alt="image" src="https://user-images.githubusercontent.com/245435/158211564-9ed8b8b9-7bb3-4d6b-8c63-36bd17454f2a.png">
+
+## Installation
+
+Use your fave package manager:
+
+```bash
+# macOS or Linux
+brew install charmbracelet/tap/melt
+
+# Arch Linux (btw)
+yay -S melt-bin
+
+# Windows (with Scoop)
+scoop install melt
+```
+
+Or download a pre-compiled binary or package from the [releases][releases] page.
+
+Or just build it yourself (requires Go 1.17+):
+
+```bash
+git clone https://github.com/charmbracelet/melt.git
+cd melt
+go build ./cmd/melt/
+```
+
+[releases]: https://github.com/charmbracelet/melt/releases
+
+
+## Usage 
+
+The CLI usage looks like the following:
+
 ```shell
 # Generate a seed phrase from an SSH key
 melt ~/.ssh/id_ed25519
@@ -15,7 +49,7 @@ melt ~/.ssh/id_ed25519
 melt restore ./my-key --seed "seed phrase"
 ```
 
-You can also pipe to and from a file directly:
+You can also pipe to and from a file:
 
 ```shell
 melt ~/.ssh/id_ed25519 > words
