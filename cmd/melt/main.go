@@ -18,6 +18,8 @@ import (
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
 	"github.com/muesli/termenv"
+	"github.com/tyler-smith/go-bip39"
+	"github.com/tyler-smith/go-bip39/wordlists"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -39,6 +41,9 @@ var (
 			Padding(1, 2)
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
+	mnemonic string
+	language string
+
 	rootCmd = &coral.Command{
 		Use: "melt",
 		Example: `  melt ~/.ssh/id_ed25519
@@ -51,6 +56,10 @@ be used to rebuild your public and private keys.`,
 		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
+			if err := setLanguage(language); err != nil {
+				return err
+			}
+
 			mnemonic, err := backup(args[0], nil)
 			if err != nil {
 				return err
@@ -67,8 +76,12 @@ be used to rebuild your public and private keys.`,
 
 				// Build formatted restore command
 				const cmdEOL = " \\"
+				var lang string
+				if language != "en" {
+					lang = fmt.Sprintf(" --language %s", language)
+				}
 				cmd := wordwrap.String(
-					os.Args[0]+` restore ./my-key --seed "`+mnemonic+`"`,
+					os.Args[0]+` restore`+lang+` ./my-key --seed "`+mnemonic+`"`,
 					w-lipgloss.Width(cmdEOL)-baseStyle.GetHorizontalFrameSize()*2,
 				)
 				leftPad := strings.Repeat(" ", baseStyle.GetMarginLeft())
@@ -91,7 +104,6 @@ be used to rebuild your public and private keys.`,
 		},
 	}
 
-	mnemonic   string
 	restoreCmd = &coral.Command{
 		Use:   "restore",
 		Short: "Recreate a key using the given seed phrase",
@@ -100,6 +112,10 @@ be used to rebuild your public and private keys.`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
+			if err := setLanguage(language); err != nil {
+				return err
+			}
+
 			if err := restore(maybeFile(mnemonic), args[0]); err != nil {
 				return err
 			}
@@ -131,6 +147,7 @@ be used to rebuild your public and private keys.`,
 )
 
 func init() {
+	rootCmd.PersistentFlags().StringVarP(&language, "language", "l", "en", "Language")
 	rootCmd.AddCommand(restoreCmd, manCmd)
 
 	restoreCmd.PersistentFlags().StringVarP(&mnemonic, "seed", "s", "-", "Seed phrase")
@@ -237,4 +254,31 @@ func completeColor(truecolor, ansi256, ansi string) string {
 		return ansi256
 	}
 	return ansi
+}
+
+// setLanguage sets the language of the big39 mnemonic seed.
+func setLanguage(language string) error {
+	switch strings.ToLower(language) {
+	case "chinese-simplified", "zh", "zh_HANS":
+		bip39.SetWordList(wordlists.ChineseSimplified)
+	case "chinese-traditional", "zh_HANT":
+		bip39.SetWordList(wordlists.ChineseTraditional)
+	case "czech", "cs":
+		bip39.SetWordList(wordlists.Czech)
+	case "english", "en":
+		bip39.SetWordList(wordlists.English)
+	case "french", "fr":
+		bip39.SetWordList(wordlists.French)
+	case "italian", "it":
+		bip39.SetWordList(wordlists.Italian)
+	case "japanese", "ja":
+		bip39.SetWordList(wordlists.Japanese)
+	case "korean", "ko":
+		bip39.SetWordList(wordlists.Korean)
+	case "spanish", "es":
+		bip39.SetWordList(wordlists.Spanish)
+	default:
+		return fmt.Errorf("this language is not supported")
+	}
+	return nil
 }
