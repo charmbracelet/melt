@@ -32,7 +32,7 @@ Or just build it yourself (requires Go 1.17+):
 ```bash
 git clone https://github.com/charmbracelet/melt.git
 cd melt
-go build ./cmd/melt/
+go install ./cmd/melt/
 ```
 
 [releases]: https://github.com/charmbracelet/melt/releases
