@@ -4,7 +4,7 @@ includes:
 
 variables:
   main: "./cmd/melt"
-  description: "Backup and restore SSH keys as mnemonic set of words"
+  description: "Backup and restore Ed25519 SSH keys with seed words"
   github_url: "https://github.com/charmbracelet/melt"
   maintainer: "Carlos A Becker <carlos@charm.sh>"
   brew_commit_author_name: "Carlos A Becker"
