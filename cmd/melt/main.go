@@ -259,9 +259,9 @@ func completeColor(truecolor, ansi256, ansi string) string {
 // setLanguage sets the language of the big39 mnemonic seed.
 func setLanguage(language string) error {
 	switch strings.ToLower(language) {
-	case "chinese-simplified", "zh", "zh_HANS":
+	case "chinese-simplified", "zh", "zh_hans":
 		bip39.SetWordList(wordlists.ChineseSimplified)
-	case "chinese-traditional", "zh_HANT":
+	case "chinese-traditional", "zh_hant":
 		bip39.SetWordList(wordlists.ChineseTraditional)
 	case "czech", "cs":
 		bip39.SetWordList(wordlists.Czech)
