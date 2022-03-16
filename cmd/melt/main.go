@@ -117,7 +117,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			if err := restore(maybeFile(mnemonic), args[0], nil); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], askNewPassphrase); err != nil {
 				return err
 			}
 
@@ -176,7 +176,7 @@ func maybeFile(s string) string {
 }
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
-	if pass == nil {
+	if len(pass) == 0 {
 		return ssh.ParseRawPrivateKey(bts)
 	}
 	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
@@ -210,26 +210,21 @@ func backup(path string, pass []byte) (string, error) {
 }
 
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
-	if pass == nil || len(pass) == 0 {
+	if len(pass) == 0 {
 		return sshmarshal.MarshalPrivateKey(key, "")
 	}
 	return sshmarshal.MarshalPrivateKeyWithPassphrase(key, "", pass)
 }
 
-func restore(mnemonic, path string, pass []byte) error {
+func restore(mnemonic, path string, passFn func() ([]byte, error)) error {
 	pvtKey, err := melt.FromMnemonic(mnemonic)
 	if err != nil {
 		return err
 	}
 
-	if pass == nil {
-		pass, err := askNewPassphrase()
-		if err != nil {
-			return err
-		}
-		if pass != nil {
-			return restore(mnemonic, path, pass)
-		}
+	pass, err := passFn()
+	if err != nil {
+		return err
 	}
 
 	block, err := marshallPrivateKey(pvtKey, pass)

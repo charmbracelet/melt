@@ -64,7 +64,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(expectedMnemonic, path, []byte{}))
+		is.NoErr(restore(expectedMnemonic, path, staticPass(nil)))
 		is.Equal(expectedSum, sha256sum(t, path+".pub"))
 
 		bts, err := os.ReadFile(path)
@@ -79,7 +79,8 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	t.Run("restore key with password", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "key")
 		is := is.New(t)
-		is.NoErr(restore(expectedMnemonic, path, []byte("asd")))
+		pass := staticPass([]byte("asd"))
+		is.NoErr(restore(expectedMnemonic, path, pass))
 
 		bts, err := os.ReadFile(path)
 		is.NoErr(err)
@@ -150,7 +151,7 @@ func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(expectedMnemonic, path, []byte{}))
+		is.NoErr(restore(expectedMnemonic, path, staticPass(nil)))
 		is.Equal(expectedSum, sha256sum(t, path+".pub"))
 
 		bts, err := os.ReadFile(path)
@@ -195,4 +196,10 @@ func sha256sum(tb testing.TB, path string) string {
 	is.NoErr(err)
 
 	return hex.EncodeToString(digest.Sum(nil))
+}
+
+func staticPass(b []byte) func() ([]byte, error) {
+	return func() ([]byte, error) {
+		return b, nil
+	}
 }
