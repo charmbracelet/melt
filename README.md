@@ -12,7 +12,7 @@ Backup and restore SSH private keys using memorizable seed phrases.
 
 ## Installation
 
-Use your fave package manager:
+### Package Manager
 
 ```bash
 # macOS or Linux
@@ -25,9 +25,16 @@ yay -S melt-bin
 scoop install melt
 ```
 
-Or download a pre-compiled binary or package from the [releases][releases] page.
+You can download a binary or package from the [releases][releases] page.
 
-Or just build it yourself (requires Go 1.17+):
+### Go
+
+Or just install it with `go`:
+```bash
+go install github.com/charmbracelet/melt/cmd/melt@latest
+```
+
+## Build (requires Go 1.17+)
 
 ```bash
 git clone https://github.com/charmbracelet/melt.git
