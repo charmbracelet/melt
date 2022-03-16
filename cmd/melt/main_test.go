@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/matryer/is"
+	"github.com/tyler-smith/go-bip39/wordlists"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -76,11 +77,42 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	})
 }
 
+func TestGetWordlist(t *testing.T) {
+	for lang, wordlist := range map[string][]string{
+		"cHinese-simplified":  wordlists.ChineseSimplified,
+		"zH":                  wordlists.ChineseSimplified,
+		"zH_haNs":             wordlists.ChineseSimplified,
+		"cHinese-tradITIONAL": wordlists.ChineseTraditional,
+		"zH_hanT":             wordlists.ChineseTraditional,
+		"cZech":               wordlists.Czech,
+		"cS":                  wordlists.Czech,
+		"eN":                  wordlists.English,
+		"eNglish":             wordlists.English,
+		"fRench":              wordlists.French,
+		"fR":                  wordlists.French,
+		"iTaliaN":             wordlists.Italian,
+		"iT":                  wordlists.Italian,
+		"jApanesE":            wordlists.Japanese,
+		"jA":                  wordlists.Japanese,
+		"kORean":              wordlists.Korean,
+		"kO":                  wordlists.Korean,
+		"sPanish":             wordlists.Spanish,
+		"eS":                  wordlists.Spanish,
+		"ES":                  wordlists.Spanish,
+		"sOmething":           nil,
+	} {
+		t.Run(lang, func(t *testing.T) {
+			is := is.New(t)
+			is.Equal(wordlist, getWordlist(lang))
+		})
+	}
+}
+
 func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 	const expectedMnemonic = `
-	いきおい ざるそば えもの せんめんじょ てあみ ていねい はったつ        
-    ろこつ すあし のぞく かまう ほくろ らくご けぶかい たおす よゆう      
-    ひめじし くたびれる ぐんたい なわばり にかい えほん せなか            
+	いきおい ざるそば えもの せんめんじょ てあみ ていねい はったつ
+    ろこつ すあし のぞく かまう ほくろ らくご けぶかい たおす よゆう
+    ひめじし くたびれる ぐんたい なわばり にかい えほん せなか
     そいとげる
 	`
 	const expectedSum = "ba34175ef608633b29f046b40cce596dd221347b77abba40763eef2e7ae51fe9"
