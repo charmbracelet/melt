@@ -258,27 +258,35 @@ func completeColor(truecolor, ansi256, ansi string) string {
 
 // setLanguage sets the language of the big39 mnemonic seed.
 func setLanguage(language string) error {
-	switch strings.ToLower(language) {
-	case "chinese-simplified", "zh", "zh_hans":
-		bip39.SetWordList(wordlists.ChineseSimplified)
-	case "chinese-traditional", "zh_hant":
-		bip39.SetWordList(wordlists.ChineseTraditional)
-	case "czech", "cs":
-		bip39.SetWordList(wordlists.Czech)
-	case "english", "en":
-		bip39.SetWordList(wordlists.English)
-	case "french", "fr":
-		bip39.SetWordList(wordlists.French)
-	case "italian", "it":
-		bip39.SetWordList(wordlists.Italian)
-	case "japanese", "ja":
-		bip39.SetWordList(wordlists.Japanese)
-	case "korean", "ko":
-		bip39.SetWordList(wordlists.Korean)
-	case "spanish", "es":
-		bip39.SetWordList(wordlists.Spanish)
-	default:
+	list := getWordlist(language)
+	if list == nil {
 		return fmt.Errorf("this language is not supported")
 	}
+	bip39.SetWordList(list)
 	return nil
+}
+
+func getWordlist(language string) []string {
+	switch strings.ToLower(language) {
+	case "chinese-simplified", "zh", "zh_hans":
+		return wordlists.ChineseSimplified
+	case "chinese-traditional", "zh_hant":
+		return wordlists.ChineseTraditional
+	case "czech", "cs":
+		return wordlists.Czech
+	case "english", "en":
+		return wordlists.English
+	case "french", "fr":
+		return wordlists.French
+	case "italian", "it":
+		return wordlists.Italian
+	case "japanese", "ja":
+		return wordlists.Japanese
+	case "korean", "ko":
+		return wordlists.Korean
+	case "spanish", "es":
+		return wordlists.Spanish
+	default:
+		return nil
+	}
 }
