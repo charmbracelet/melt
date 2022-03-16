@@ -39,11 +39,10 @@ go install github.com/charmbracelet/melt/cmd/melt@latest
 ```bash
 git clone https://github.com/charmbracelet/melt.git
 cd melt
-go install ./cmd/melt/
+go build ./cmd/melt/
 ```
 
 [releases]: https://github.com/charmbracelet/melt/releases
-
 
 ## Usage 
 
