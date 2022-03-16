@@ -64,13 +64,27 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(expectedMnemonic, path))
+		is.NoErr(restore(expectedMnemonic, path, []byte{}))
 		is.Equal(expectedSum, sha256sum(t, path+".pub"))
 
 		bts, err := os.ReadFile(path)
 		is.NoErr(err)
 
 		k, err := ssh.ParsePrivateKey(bts)
+		is.NoErr(err)
+
+		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
+	})
+
+	t.Run("restore key with password", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "key")
+		is := is.New(t)
+		is.NoErr(restore(expectedMnemonic, path, []byte("asd")))
+
+		bts, err := os.ReadFile(path)
+		is.NoErr(err)
+
+		k, err := ssh.ParsePrivateKeyWithPassphrase(bts, []byte("asd"))
 		is.NoErr(err)
 
 		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
@@ -136,7 +150,7 @@ func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 	t.Run("restore", func(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "key")
-		is.NoErr(restore(expectedMnemonic, path))
+		is.NoErr(restore(expectedMnemonic, path, []byte{}))
 		is.Equal(expectedSum, sha256sum(t, path+".pub"))
 
 		bts, err := os.ReadFile(path)

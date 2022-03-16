@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"encoding/pem"
 	"errors"
@@ -116,7 +117,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			if err := restore(maybeFile(mnemonic), args[0]); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], nil); err != nil {
 				return err
 			}
 
@@ -174,28 +175,28 @@ func maybeFile(s string) string {
 	return string(bts)
 }
 
-func backup(path string, pwd []byte) (string, error) {
+func parsePrivateKey(bts, pass []byte) (interface{}, error) {
+	if pass == nil {
+		return ssh.ParseRawPrivateKey(bts)
+	}
+	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
+}
+
+func backup(path string, pass []byte) (string, error) {
 	bts, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
 
-	var key interface{}
-	if pwd == nil {
-		key, err = ssh.ParseRawPrivateKey(bts)
-	} else {
-		key, err = ssh.ParseRawPrivateKeyWithPassphrase(bts, pwd)
-	}
+	key, err := parsePrivateKey(bts, pass)
 	if err != nil {
 		pwderr := &ssh.PassphraseMissingError{}
 		if errors.As(err, &pwderr) {
-			fmt.Fprintf(os.Stderr, "Enter the password to decrypt %q: ", path)
-			pwd, err := term.ReadPassword(int(os.Stdin.Fd()))
-			fmt.Printf("\n\n")
+			pass, err := askKeyPassphrase(path)
 			if err != nil {
-				return "", fmt.Errorf("could not read password for key: %w", err)
+				return "", err
 			}
-			return backup(path, pwd)
+			return backup(path, pass)
 		}
 		return "", fmt.Errorf("could not parse key: %w", err)
 	}
@@ -208,22 +209,40 @@ func backup(path string, pwd []byte) (string, error) {
 	}
 }
 
-func restore(mnemonic, path string) error {
+func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
+	if pass == nil || len(pass) == 0 {
+		return sshmarshal.MarshalPrivateKey(key, "")
+	}
+	return sshmarshal.MarshalPrivateKeyWithPassphrase(key, "", pass)
+}
+
+func restore(mnemonic, path string, pass []byte) error {
 	pvtKey, err := melt.FromMnemonic(mnemonic)
 	if err != nil {
 		return err
 	}
-	block, err := sshmarshal.MarshalPrivateKey(pvtKey, "")
+
+	if pass == nil {
+		pass, err := askNewPassphrase()
+		if err != nil {
+			return err
+		}
+		if pass != nil {
+			return restore(mnemonic, path, pass)
+		}
+	}
+
+	block, err := marshallPrivateKey(pvtKey, pass)
 	if err != nil {
 		return fmt.Errorf("could not marshal private key: %w", err)
 	}
-	bts := pem.EncodeToMemory(block)
+
 	pubkey, err := ssh.NewPublicKey(pvtKey.Public())
 	if err != nil {
 		return fmt.Errorf("could not prepare public key: %w", err)
 	}
 
-	if err := os.WriteFile(path, bts, 0o600); err != nil {
+	if err := os.WriteFile(path, pem.EncodeToMemory(block), 0o600); err != nil {
 		return fmt.Errorf("failed to write private key: %w", err)
 	}
 
@@ -289,4 +308,37 @@ func getWordlist(language string) []string {
 	default:
 		return nil
 	}
+}
+
+func readPassword(msg string) ([]byte, error) {
+	fmt.Fprint(os.Stderr, msg)
+	pass, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return nil, fmt.Errorf("could not read passphrase: %w", err)
+	}
+	return pass, nil
+}
+
+func askKeyPassphrase(path string) ([]byte, error) {
+	defer fmt.Fprintf(os.Stderr, "\n")
+	return readPassword(fmt.Sprintf("Enter the passphrase to unlock %q: ", path))
+}
+
+func askNewPassphrase() ([]byte, error) {
+	defer fmt.Fprintf(os.Stderr, "\n")
+	pass, err := readPassword("Enter passphrase (empty for no passphrase): ")
+	if err != nil {
+		return nil, err
+	}
+
+	confirm, err := readPassword("\nEnter same passphrase again: ")
+	if err != nil {
+		return nil, fmt.Errorf("could not read password confirmation for key: %w", err)
+	}
+
+	if !bytes.Equal(pass, confirm) {
+		return nil, fmt.Errorf("Passphareses do not match")
+	}
+
+	return pass, nil
 }
