@@ -7,7 +7,7 @@
 
 Backup and restore SSH private keys using memorizable seed phrases.
 
-<img width="1332" alt="image" src="https://user-images.githubusercontent.com/245435/158211564-9ed8b8b9-7bb3-4d6b-8c63-36bd17454f2a.png">
+<img width="600" alt="Melt example" src="https://stuff.charm.sh/melt/melt-example.png">
 
 ## Installation
 
