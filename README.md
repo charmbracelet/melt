@@ -1,8 +1,9 @@
 # Melt
 
 <p>
-    <img src="https://stuff.charm.sh/melt/melt-header.png" width="294" alt="Melt Mascot">
-    <!-- badges here -->
+    <img src="https://stuff.charm.sh/melt/melt-header.png" width="294" alt="Melt Mascot"><br>
+        <a href="https://github.com/charmbracelet/melt/releases"><img src="https://img.shields.io/github/release/charmbracelet/melt.svg" alt="Latest Release"></a>
+    <a href="https://github.com/charmbracelet/melt/actions"><img src="https://github.com/charmbracelet/melt/workflows/build/badge.svg" alt="Build Status"></a>
 </p>
 
 Backup and restore SSH private keys using memorizable seed phrases.
