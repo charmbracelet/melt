@@ -23,6 +23,8 @@ import (
 	"github.com/tyler-smith/go-bip39/wordlists"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
+	lang "golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 const (
@@ -280,29 +282,47 @@ func setLanguage(language string) error {
 	return nil
 }
 
+func sanitizeLang(s string) string {
+	return strings.ReplaceAll(strings.ToLower(s), " ", "-")
+}
+
+var wordLists = map[lang.Tag][]string{
+	lang.Chinese:              wordlists.ChineseSimplified,
+	lang.SimplifiedChinese:    wordlists.ChineseSimplified,
+	lang.TraditionalChinese:   wordlists.ChineseTraditional,
+	lang.Czech:                wordlists.Czech,
+	lang.AmericanEnglish:      wordlists.English,
+	lang.BritishEnglish:       wordlists.English,
+	lang.English:              wordlists.English,
+	lang.French:               wordlists.French,
+	lang.Italian:              wordlists.Italian,
+	lang.Japanese:             wordlists.Japanese,
+	lang.Korean:               wordlists.Korean,
+	lang.Spanish:              wordlists.Spanish,
+	lang.EuropeanSpanish:      wordlists.Spanish,
+	lang.LatinAmericanSpanish: wordlists.Spanish,
+}
+
 func getWordlist(language string) []string {
-	switch strings.ToLower(language) {
-	case "chinese-simplified", "zh", "zh_hans":
-		return wordlists.ChineseSimplified
-	case "chinese-traditional", "zh_hant":
-		return wordlists.ChineseTraditional
-	case "czech", "cs":
-		return wordlists.Czech
-	case "english", "en":
-		return wordlists.English
-	case "french", "fr":
-		return wordlists.French
-	case "italian", "it":
-		return wordlists.Italian
-	case "japanese", "ja":
-		return wordlists.Japanese
-	case "korean", "ko":
-		return wordlists.Korean
-	case "spanish", "es":
-		return wordlists.Spanish
-	default:
+	language = sanitizeLang(language)
+	tag := lang.Make(language)
+	en := display.English.Languages() // default language name matcher
+	for t := range wordLists {
+		if sanitizeLang(en.Name(t)) == language {
+			tag = t
+			break
+		}
+	}
+	if tag == lang.Und { // Unknown language
 		return nil
 	}
+	base, _ := tag.Base()
+	btag := lang.MustParse(base.String())
+	wl := wordLists[tag]
+	if wl == nil {
+		return wordLists[btag]
+	}
+	return wl
 }
 
 func readPassword(msg string) ([]byte, error) {
