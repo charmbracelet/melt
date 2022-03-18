@@ -65,7 +65,7 @@ It all comes down to the private key __seed__:
 
 Knowing that, we open the key and extract its seed, and use it as __entropy__ for the [bip39][] algorithm, which states:
 
-> The mnemonic must encode entropy in a multiple of 32 bits. With more entropy security is improved but the sentence length increases. We refer to the initial entropy length as ENT. The allowed size of ENT is 128-256 bits.[^1]
+> The mnemonic must encode entropy in a multiple of 32 bits. With more entropy security is improved but the sentence length increases. We refer to the initial entropy length as ENT. The allowed size of ENT is 128-256 bits.[^2]
 
 Doing that, we get the __mnemonic__ set of words back.
 
@@ -78,6 +78,7 @@ You can verify the keys by checking the public key fingerprint, which should be
 the same in the original and _restored_ key.
 
 [^1]: Warner, Brian. [How do Ed5519 keys work?](https://blog.mozilla.org/warner/2011/11/29/ed25519-keys/) (2011)
+[^2]: Palatinus, Marek et al. [Mnemonic code for generating deterministic keys](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) (2013)
 
 [bip39]: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
 
