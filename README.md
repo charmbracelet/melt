@@ -78,7 +78,7 @@ You can verify the keys by checking the public key fingerprint, which should be
 the same in the original and _restored_ key.
 
 [^1]: Warner, Brian. [How do Ed5519 keys work?](https://blog.mozilla.org/warner/2011/11/29/ed25519-keys/) (2011)
-[ˆ2]: Palatinus, Marek et al. [Mnemonic code for generating deterministic keys](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) (2013)
+[^2]: Palatinus, Marek et al. [Mnemonic code for generating deterministic keys](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) (2013)
 
 [bip39]: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
 
