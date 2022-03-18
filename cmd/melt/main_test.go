@@ -78,42 +78,42 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 }
 
 func TestGetWordlist(t *testing.T) {
-	for lang, wordlist := range map[string][]string{
-		"cHinese":             wordlists.ChineseSimplified,
-		"simplified-cHinese":  wordlists.ChineseSimplified,
-		"zH":                  wordlists.ChineseSimplified,
-		"zH_haNs":             wordlists.ChineseSimplified,
-		"tradITIONAL-cHinese": wordlists.ChineseTraditional,
-		"zH_hanT":             wordlists.ChineseTraditional,
-		"cZech":               wordlists.Czech,
-		"cS":                  wordlists.Czech,
-		"eN":                  wordlists.English,
-		"eN-gb":               wordlists.English,
-		"eNglish":             wordlists.English,
-		"american-eNglish":    wordlists.English,
-		"british-eNglish":     wordlists.English,
-		"fRench":              wordlists.French,
-		"fR":                  wordlists.French,
-		"iTaliaN":             wordlists.Italian,
-		"iT":                  wordlists.Italian,
-		"jApanesE":            wordlists.Japanese,
-		"jA":                  wordlists.Japanese,
-		"kORean":              wordlists.Korean,
-		"kO":                  wordlists.Korean,
-		"sPanish":             wordlists.Spanish,
-		"eS":                  wordlists.Spanish,
-		"eS-ER":               wordlists.Spanish,
-		"european-spanish":    wordlists.Spanish,
-		"ES":                  wordlists.Spanish,
-		"zz":                  nil,
-		"sOmething":           nil,
-	} {
-		t.Run(lang, func(t *testing.T) {
-			is := is.New(t)
-			is.Equal(wordlist, getWordlist(lang))
-		})
-	}
-}
+ 	for lang, wordlist := range map[string][]string{
+ 		"cHinese":             wordlists.ChineseSimplified,
+ 		"simplified-cHinese":  wordlists.ChineseSimplified,
+ 		"zH":                  wordlists.ChineseSimplified,
+ 		"zH_haNs":             wordlists.ChineseSimplified,
+ 		"tradITIONAL-cHinese": wordlists.ChineseTraditional,
+ 		"zH_hanT":             wordlists.ChineseTraditional,
+ 		"cZech":               wordlists.Czech,
+ 		"cS":                  wordlists.Czech,
+ 		"eN":                  wordlists.English,
+ 		"eN-gb":               wordlists.English,
+ 		"eNglish":             wordlists.English,
+ 		"american-eNglish":    wordlists.English,
+ 		"british-eNglish":     wordlists.English,
+ 		"fRench":              wordlists.French,
+ 		"fR":                  wordlists.French,
+ 		"iTaliaN":             wordlists.Italian,
+ 		"iT":                  wordlists.Italian,
+ 		"jApanesE":            wordlists.Japanese,
+ 		"jA":                  wordlists.Japanese,
+ 		"kORean":              wordlists.Korean,
+ 		"kO":                  wordlists.Korean,
+ 		"sPanish":             wordlists.Spanish,
+ 		"eS":                  wordlists.Spanish,
+ 		"eS-ER":               wordlists.Spanish,
+ 		"european-spanish":    wordlists.Spanish,
+ 		"ES":                  wordlists.Spanish,
+ 		"zz":                  nil,
+ 		"sOmething":           nil,
+ 	} {
+ 		t.Run(lang, func(t *testing.T) {
+ 			is := is.New(t)
+ 			is.Equal(wordlist, getWordlist(lang))
+ 		})
+ 	}
+ }
 
 func TestBackupRestoreKnownKeyInJapanse(t *testing.T) {
 	const expectedMnemonic = `
