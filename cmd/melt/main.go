@@ -119,7 +119,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			if err := restore(maybeFile(mnemonic), args[0], askNewPassphrase); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], maybeAskNewPassphrase(mnemonic)); err != nil {
 				return err
 			}
 
@@ -337,6 +337,14 @@ func readPassword(msg string) ([]byte, error) {
 func askKeyPassphrase(path string) ([]byte, error) {
 	defer fmt.Fprintf(os.Stderr, "\n")
 	return readPassword(fmt.Sprintf("Enter the passphrase to unlock %q: ", path))
+}
+
+func maybeAskNewPassphrase(in string) func() ([]byte, error) {
+	// when mnemonic comes from stdin, we can't read the pwd from stdin...
+	if in == "-" {
+		return func() ([]byte, error) { return nil, nil }
+	}
+	return askNewPassphrase
 }
 
 func askNewPassphrase() ([]byte, error) {
