@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
 	"github.com/mattn/go-isatty"
+	"github.com/mattn/go-tty"
 	"github.com/muesli/coral"
 	mcoral "github.com/muesli/mango-coral"
 	"github.com/muesli/reflow/wordwrap"
@@ -119,7 +120,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			if err := restore(maybeFile(mnemonic), args[0], maybeAskNewPassphrase(mnemonic)); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], askNewPassphrase); err != nil {
 				return err
 			}
 
@@ -327,7 +328,12 @@ func getWordlist(language string) []string {
 
 func readPassword(msg string) ([]byte, error) {
 	fmt.Fprint(os.Stderr, msg)
-	pass, err := term.ReadPassword(int(os.Stdin.Fd()))
+	t, err := tty.Open()
+	if err != nil {
+		return nil, fmt.Errorf("could not open tty")
+	}
+	defer t.Close()
+	pass, err := term.ReadPassword(int(t.Input().Fd()))
 	if err != nil {
 		return nil, fmt.Errorf("could not read passphrase: %w", err)
 	}
@@ -337,14 +343,6 @@ func readPassword(msg string) ([]byte, error) {
 func askKeyPassphrase(path string) ([]byte, error) {
 	defer fmt.Fprintf(os.Stderr, "\n")
 	return readPassword(fmt.Sprintf("Enter the passphrase to unlock %q: ", path))
-}
-
-func maybeAskNewPassphrase(in string) func() ([]byte, error) {
-	// when mnemonic comes from stdin, we can't read the pwd from stdin...
-	if in == "-" {
-		return func() ([]byte, error) { return nil, nil }
-	}
-	return askNewPassphrase
 }
 
 func askNewPassphrase() ([]byte, error) {
