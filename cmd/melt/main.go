@@ -33,16 +33,16 @@ const (
 )
 
 var (
-	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2)
+	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2) // nolint: gomnd
 	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
 	cmdStyle  = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
-			Padding(0, 1)
+			Padding(0, 1) // nolint: gomnd
 	mnemonicStyle = baseStyle.Copy().
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
-			Padding(1, 2)
+			Padding(1, 2) // nolint: gomnd
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	mnemonic string
@@ -140,6 +140,7 @@ be used to rebuild your public and private keys.`,
 		RunE: func(cmd *coral.Command, args []string) error {
 			manPage, err := mcoral.NewManPage(1, rootCmd)
 			if err != nil {
+				// nolint: wrapcheck
 				return err
 			}
 			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
@@ -180,8 +181,10 @@ func maybeFile(s string) string {
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
 	if len(pass) == 0 {
+		// nolint: wrapcheck
 		return ssh.ParseRawPrivateKey(bts)
 	}
+	// nolint: wrapcheck
 	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
 }
 
@@ -206,6 +209,7 @@ func backup(path string, pass []byte) (string, error) {
 
 	switch key := key.(type) {
 	case *ed25519.PrivateKey:
+		// nolint: wrapcheck
 		return melt.ToMnemonic(key)
 	default:
 		return "", fmt.Errorf("unknown key type: %v", key)
@@ -214,14 +218,17 @@ func backup(path string, pass []byte) (string, error) {
 
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
 	if len(pass) == 0 {
+		// nolint: wrapcheck
 		return sshmarshal.MarshalPrivateKey(key, "")
 	}
+	// nolint: wrapcheck
 	return sshmarshal.MarshalPrivateKeyWithPassphrase(key, "", pass)
 }
 
 func restore(mnemonic, path string, passFn func() ([]byte, error)) error {
 	pvtKey, err := melt.FromMnemonic(mnemonic)
 	if err != nil {
+		// nolint: wrapcheck
 		return err
 	}
 
