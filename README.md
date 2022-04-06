@@ -44,7 +44,7 @@ go build ./cmd/melt/
 
 [releases]: https://github.com/charmbracelet/melt/releases
 
-## Usage 
+## Usage
 
 The CLI usage looks like the following:
 
@@ -79,7 +79,7 @@ To restore, we:
 
 - get the __entropy__ from the __mnemonic__
 - the __entropy__ is effectively the key __seed__, so we use it to create a SSH key pair
-- the key is effectively the same that was backup up, as the key is the same.
+- the key is effectively the same that was backed up, as the key is the same.
 You can verify the keys by checking the public key fingerprint, which should be
 the same in the original and _restored_ key.
 
