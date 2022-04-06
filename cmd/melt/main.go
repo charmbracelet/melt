@@ -240,11 +240,11 @@ func restore(mnemonic, path string, passFn func() ([]byte, error)) error {
 		return fmt.Errorf("could not prepare public key: %w", err)
 	}
 
-	if err := os.WriteFile(path, pem.EncodeToMemory(block), 0o600); err != nil {
+	if err := os.WriteFile(path, pem.EncodeToMemory(block), 0o600); err != nil { // nolint: gomnd
 		return fmt.Errorf("failed to write private key: %w", err)
 	}
 
-	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o600); err != nil {
+	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o600); err != nil { // nolint: gomnd
 		return fmt.Errorf("failed to write public key: %w", err)
 	}
 	return nil
@@ -332,7 +332,7 @@ func readPassword(msg string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not open tty")
 	}
-	defer t.Close()
+	defer t.Close() // nolint: errcheck
 	pass, err := term.ReadPassword(int(t.Input().Fd()))
 	if err != nil {
 		return nil, fmt.Errorf("could not read passphrase: %w", err)
