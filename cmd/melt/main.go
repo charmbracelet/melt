@@ -38,7 +38,7 @@ var (
 	cmdStyle  = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
-			Padding(0, 1) // nolint: gomnd
+			Padding(0, 1)
 	mnemonicStyle = baseStyle.Copy().
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
@@ -271,6 +271,7 @@ func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
 }
 
 func completeColor(truecolor, ansi256, ansi string) string {
+	// nolint: exhaustive
 	switch lipgloss.ColorProfile() {
 	case termenv.TrueColor:
 		return truecolor
