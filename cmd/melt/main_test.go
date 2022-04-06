@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -45,6 +46,9 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 	})
 
 	t.Run("backup key without password", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skipf("it keeps waiting on a tty for the password")
+		}
 		_, err := backup("testdata/pwd_id_ed25519", nil)
 		is := is.New(t)
 		is.True(err != nil)
