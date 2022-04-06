@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"encoding/pem"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
 	"github.com/mattn/go-isatty"
+	"github.com/mattn/go-tty"
 	"github.com/muesli/coral"
 	mcoral "github.com/muesli/mango-coral"
 	"github.com/muesli/reflow/wordwrap"
@@ -31,7 +33,7 @@ const (
 )
 
 var (
-	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2)
+	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2) // nolint: gomnd
 	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
 	cmdStyle  = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
@@ -40,7 +42,7 @@ var (
 	mnemonicStyle = baseStyle.Copy().
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
-			Padding(1, 2)
+			Padding(1, 2) // nolint: gomnd
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	mnemonic string
@@ -118,7 +120,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			if err := restore(maybeFile(mnemonic), args[0]); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], askNewPassphrase); err != nil {
 				return err
 			}
 
@@ -138,6 +140,7 @@ be used to rebuild your public and private keys.`,
 		RunE: func(cmd *coral.Command, args []string) error {
 			manPage, err := mcoral.NewManPage(1, rootCmd)
 			if err != nil {
+				// nolint: wrapcheck
 				return err
 			}
 			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
@@ -176,60 +179,79 @@ func maybeFile(s string) string {
 	return string(bts)
 }
 
-func backup(path string, pwd []byte) (string, error) {
+func parsePrivateKey(bts, pass []byte) (interface{}, error) {
+	if len(pass) == 0 {
+		// nolint: wrapcheck
+		return ssh.ParseRawPrivateKey(bts)
+	}
+	// nolint: wrapcheck
+	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
+}
+
+func backup(path string, pass []byte) (string, error) {
 	bts, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
 
-	var key interface{}
-	if pwd == nil {
-		key, err = ssh.ParseRawPrivateKey(bts)
-	} else {
-		key, err = ssh.ParseRawPrivateKeyWithPassphrase(bts, pwd)
-	}
+	key, err := parsePrivateKey(bts, pass)
 	if err != nil {
 		pwderr := &ssh.PassphraseMissingError{}
 		if errors.As(err, &pwderr) {
-			fmt.Fprintf(os.Stderr, "Enter the password to decrypt %q: ", path)
-			pwd, err := term.ReadPassword(int(os.Stdin.Fd()))
-			fmt.Printf("\n\n")
+			pass, err := askKeyPassphrase(path)
 			if err != nil {
-				return "", fmt.Errorf("could not read password for key: %w", err)
+				return "", err
 			}
-			return backup(path, pwd)
+			return backup(path, pass)
 		}
 		return "", fmt.Errorf("could not parse key: %w", err)
 	}
 
 	switch key := key.(type) {
 	case *ed25519.PrivateKey:
+		// nolint: wrapcheck
 		return melt.ToMnemonic(key)
 	default:
 		return "", fmt.Errorf("unknown key type: %v", key)
 	}
 }
 
-func restore(mnemonic, path string) error {
+func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
+	if len(pass) == 0 {
+		// nolint: wrapcheck
+		return sshmarshal.MarshalPrivateKey(key, "")
+	}
+	// nolint: wrapcheck
+	return sshmarshal.MarshalPrivateKeyWithPassphrase(key, "", pass)
+}
+
+func restore(mnemonic, path string, passFn func() ([]byte, error)) error {
 	pvtKey, err := melt.FromMnemonic(mnemonic)
+	if err != nil {
+		// nolint: wrapcheck
+		return err
+	}
+
+	pass, err := passFn()
 	if err != nil {
 		return err
 	}
-	block, err := sshmarshal.MarshalPrivateKey(pvtKey, "")
+
+	block, err := marshallPrivateKey(pvtKey, pass)
 	if err != nil {
 		return fmt.Errorf("could not marshal private key: %w", err)
 	}
-	bts := pem.EncodeToMemory(block)
+
 	pubkey, err := ssh.NewPublicKey(pvtKey.Public())
 	if err != nil {
 		return fmt.Errorf("could not prepare public key: %w", err)
 	}
 
-	if err := os.WriteFile(path, bts, 0o600); err != nil {
+	if err := os.WriteFile(path, pem.EncodeToMemory(block), 0o600); err != nil { // nolint: gomnd
 		return fmt.Errorf("failed to write private key: %w", err)
 	}
 
-	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o600); err != nil {
+	if err := os.WriteFile(path+".pub", ssh.MarshalAuthorizedKey(pubkey), 0o600); err != nil { // nolint: gomnd
 		return fmt.Errorf("failed to write public key: %w", err)
 	}
 	return nil
@@ -249,6 +271,7 @@ func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
 }
 
 func completeColor(truecolor, ansi256, ansi string) string {
+	// nolint: exhaustive
 	switch lipgloss.ColorProfile() {
 	case termenv.TrueColor:
 		return truecolor
@@ -309,4 +332,42 @@ func getWordlist(language string) []string {
 		return wordLists[btag]
 	}
 	return wl
+}
+
+func readPassword(msg string) ([]byte, error) {
+	fmt.Fprint(os.Stderr, msg)
+	t, err := tty.Open()
+	if err != nil {
+		return nil, fmt.Errorf("could not open tty")
+	}
+	defer t.Close() // nolint: errcheck
+	pass, err := term.ReadPassword(int(t.Input().Fd()))
+	if err != nil {
+		return nil, fmt.Errorf("could not read passphrase: %w", err)
+	}
+	return pass, nil
+}
+
+func askKeyPassphrase(path string) ([]byte, error) {
+	defer fmt.Fprintf(os.Stderr, "\n")
+	return readPassword(fmt.Sprintf("Enter the passphrase to unlock %q: ", path))
+}
+
+func askNewPassphrase() ([]byte, error) {
+	defer fmt.Fprintf(os.Stderr, "\n")
+	pass, err := readPassword("Enter passphrase (empty for no passphrase): ")
+	if err != nil {
+		return nil, err
+	}
+
+	confirm, err := readPassword("\nEnter same passphrase again: ")
+	if err != nil {
+		return nil, fmt.Errorf("could not read password confirmation for key: %w", err)
+	}
+
+	if !bytes.Equal(pass, confirm) {
+		return nil, fmt.Errorf("Passphareses do not match")
+	}
+
+	return pass, nil
 }
