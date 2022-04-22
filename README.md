@@ -23,6 +23,9 @@ yay -S melt-bin
 
 # Windows (with Scoop)
 scoop install melt
+
+# Nix
+nix-env -iA nixpkgs.melt
 ```
 
 You can download a binary or package from the [releases][releases] page.
