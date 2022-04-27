@@ -27,6 +27,7 @@ be used to rebuild your public and private keys.`,
 		Args:         coral.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
+			// nolint: wrapcheck
 			return cli.Backup(args[0], language)
 		},
 	}
@@ -39,6 +40,7 @@ be used to rebuild your public and private keys.`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
+			// nolint: wrapcheck
 			return cli.Restore(args[0], maybeFile(mnemonic), language)
 		},
 	}
