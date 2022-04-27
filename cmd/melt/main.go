@@ -39,7 +39,7 @@ be used to rebuild your public and private keys.`,
 		Aliases: []string{"res", "r"},
 		Args:    coral.ExactArgs(1),
 		RunE: func(cmd *coral.Command, args []string) error {
-			return cli.Restore(maybeFile(mnemonic), language, args[0])
+			return cli.Restore(args[0], maybeFile(mnemonic), language)
 		},
 	}
 

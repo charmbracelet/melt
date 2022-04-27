@@ -43,6 +43,7 @@ var (
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 )
 
+// Backup a key in the given path using the given language.
 func Backup(path, language string) error {
 	if err := setLanguage(language); err != nil {
 		return err
@@ -91,7 +92,8 @@ func Backup(path, language string) error {
 	return nil
 }
 
-func Restore(mnemonic, language, path string) error {
+// Restore to the given path using the given mnemonic (seed) and language.
+func Restore(path, mnemonic, language string) error {
 	if err := setLanguage(language); err != nil {
 		return err
 	}
