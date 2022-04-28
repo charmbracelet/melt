@@ -163,17 +163,17 @@ func maybeFile(s string) string {
 	return string(bts)
 }
 
-func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
-	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
-	_, _ = io.WriteString(w, "\n")
-}
-
 func getWidth(max int) int {
 	w, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || w > max {
 		return maxWidth
 	}
 	return w
+}
+
+func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
+	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
+	_, _ = io.WriteString(w, "\n")
 }
 
 func completeColor(truecolor, ansi256, ansi string) string {
