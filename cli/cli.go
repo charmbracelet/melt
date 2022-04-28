@@ -6,17 +6,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/caarlos0/sshmarshal"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
-	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-tty"
-	"github.com/muesli/reflow/wordwrap"
-	"github.com/muesli/termenv"
 	"github.com/tyler-smith/go-bip39"
 	"github.com/tyler-smith/go-bip39/wordlists"
 	"golang.org/x/crypto/ssh"
@@ -25,71 +20,13 @@ import (
 	"golang.org/x/text/language/display"
 )
 
-const (
-	maxWidth = 72
-)
-
-var (
-	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2) // nolint: gomnd
-	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
-	cmdStyle  = lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
-			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
-			Padding(0, 1)
-	mnemonicStyle = baseStyle.Copy().
-			Foreground(violet).
-			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
-			Padding(1, 2) // nolint: gomnd
-	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
-)
-
 // Backup a key in the given path using the given language.
-func Backup(path, language string) error {
+func Backup(path, language string) (string, error) {
 	if err := setLanguage(language); err != nil {
-		return err
+		return "", err
 	}
 
-	mnemonic, err := backup(path, nil)
-	if err != nil {
-		return err
-	}
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		b := strings.Builder{}
-		w := getWidth(maxWidth)
-
-		b.WriteRune('\n')
-		meltCmd := cmdStyle.Render(path)
-		renderBlock(&b, baseStyle, w, fmt.Sprintf("OK! Your key has been melted down to the seed phrase below. Store it somewhere safe. You can use %s to recover your key at any time.", meltCmd))
-		renderBlock(&b, mnemonicStyle, w, mnemonic)
-		renderBlock(&b, baseStyle, w, "To recreate this key run:")
-
-		// Build formatted restore command
-		const cmdEOL = " \\"
-		var lang string
-		if language != "en" {
-			lang = fmt.Sprintf(" --language %s", language)
-		}
-		cmd := wordwrap.String(
-			path+` restore`+lang+` ./my-key --seed "`+mnemonic+`"`,
-			w-lipgloss.Width(cmdEOL)-baseStyle.GetHorizontalFrameSize()*2,
-		)
-		leftPad := strings.Repeat(" ", baseStyle.GetMarginLeft())
-		cmdLines := strings.Split(cmd, "\n")
-		for i, l := range cmdLines {
-			b.WriteString(leftPad)
-			b.WriteString(l)
-			if i < len(cmdLines)-1 {
-				b.WriteString(cmdEOL)
-				b.WriteRune('\n')
-			}
-		}
-		b.WriteRune('\n')
-
-		fmt.Println(b.String())
-	} else {
-		fmt.Print(mnemonic)
-	}
-	return nil
+	return backup(path, nil)
 }
 
 // Restore to the given path using the given mnemonic (seed) and language.
@@ -102,9 +39,6 @@ func Restore(path, mnemonic, language string) error {
 		return err
 	}
 
-	pub := keyPathStyle.Render(path)
-	priv := keyPathStyle.Render(path + ".pub")
-	fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s", pub, priv)))
 	return nil
 }
 
@@ -184,30 +118,6 @@ func restore(mnemonic, path string, passFn func() ([]byte, error)) error {
 		return fmt.Errorf("failed to write public key: %w", err)
 	}
 	return nil
-}
-
-func getWidth(max int) int {
-	w, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || w > max {
-		return maxWidth
-	}
-	return w
-}
-
-func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
-	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
-	_, _ = io.WriteString(w, "\n")
-}
-
-func completeColor(truecolor, ansi256, ansi string) string {
-	// nolint: exhaustive
-	switch lipgloss.ColorProfile() {
-	case termenv.TrueColor:
-		return truecolor
-	case termenv.ANSI256:
-		return ansi256
-	}
-	return ansi
 }
 
 // setLanguage sets the language of the big39 mnemonic seed.
