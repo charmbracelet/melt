@@ -120,11 +120,7 @@ be used to rebuild your public and private keys.`,
 				return err
 			}
 
-			bts, err := maybeFile(mnemonic)
-			if err != nil {
-				return err
-			}
-			if err := restore(string(bts), args[0], askNewPassphrase); err != nil {
+			if err := restore(maybeFile(mnemonic), args[0], askNewPassphrase); err != nil {
 				return err
 			}
 
@@ -169,18 +165,18 @@ func main() {
 	}
 }
 
-func maybeFile(s string) ([]byte, error) {
+func maybeFile(s string) string {
 	if s == "-" {
 		bts, err := io.ReadAll(os.Stdin)
 		if err == nil {
-			return bts, nil
+			return string(bts)
 		}
 	}
 	bts, err := os.ReadFile(s)
 	if err != nil {
-		return []byte(s), nil
+		return s
 	}
-	return bts, nil
+	return string(bts)
 }
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
@@ -193,7 +189,7 @@ func parsePrivateKey(bts, pass []byte) (interface{}, error) {
 }
 
 func backup(path string, pass []byte) (string, error) {
-	bts, err := maybeFile(path)
+	bts, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
