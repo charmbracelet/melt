@@ -181,17 +181,24 @@ func TestMaybeFile(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "f")
 		content := "test content"
 		is.NoErr(os.WriteFile(path, []byte(content), 0o644)) // nolint: gomnd
-		is.Equal(content, maybeFile(path))
+
+		bts, err := maybeFile(path)
+		is.NoErr(err)
+		is.Equal(content, string(bts))
 	})
 
 	t.Run("not a file", func(t *testing.T) {
 		is := is.New(t)
-		is.Equal("strings", maybeFile("strings"))
+		bts, err := maybeFile("strings")
+		is.NoErr(err)
+		is.Equal("strings", string(bts))
 	})
 
 	t.Run("stdin", func(t *testing.T) {
 		is := is.New(t)
-		is.Equal("", maybeFile("-"))
+		bts, err := maybeFile("-")
+		is.NoErr(err)
+		is.Equal(0, len(bts))
 	})
 }
 
