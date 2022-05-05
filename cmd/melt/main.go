@@ -189,7 +189,13 @@ func parsePrivateKey(bts, pass []byte) (interface{}, error) {
 }
 
 func backup(path string, pass []byte) (string, error) {
-	bts, err := os.ReadFile(path)
+	var bts []byte
+	var err error
+	if path == "-" {
+		bts, err = io.ReadAll(os.Stdin)
+	} else {
+		bts, err = os.ReadFile(path)
+	}
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
