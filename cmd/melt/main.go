@@ -15,11 +15,11 @@ import (
 	"github.com/charmbracelet/melt"
 	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-tty"
-	"github.com/muesli/coral"
-	mcoral "github.com/muesli/mango-coral"
+	mcobra "github.com/muesli/mango-cobra"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
 	"github.com/muesli/termenv"
+	"github.com/spf13/cobra"
 	"github.com/tyler-smith/go-bip39"
 	"github.com/tyler-smith/go-bip39/wordlists"
 	"golang.org/x/crypto/ssh"
@@ -48,7 +48,7 @@ var (
 	mnemonic string
 	language string
 
-	rootCmd = &coral.Command{
+	rootCmd = &cobra.Command{
 		Use: "melt",
 		Example: `  melt ~/.ssh/id_ed25519
   melt ~/.ssh/id_ed25519 > seed
@@ -57,9 +57,9 @@ var (
 		Short: "Generate a seed phrase from an SSH key",
 		Long: `melt generates a seed phrase from an SSH key. That phrase can
 be used to rebuild your public and private keys.`,
-		Args:         coral.MaximumNArgs(1),
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
-		RunE: func(cmd *coral.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setLanguage(language); err != nil {
 				return err
 			}
@@ -113,14 +113,14 @@ be used to rebuild your public and private keys.`,
 		},
 	}
 
-	restoreCmd = &coral.Command{
+	restoreCmd = &cobra.Command{
 		Use:   "restore",
 		Short: "Recreate a key using the given seed phrase",
 		Example: `  melt restore --seed "seed phrase" ./restored_id25519
   melt restore ./restored_id25519 < seed`,
 		Aliases: []string{"res", "r"},
-		Args:    coral.ExactArgs(1),
-		RunE: func(cmd *coral.Command, args []string) error {
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setLanguage(language); err != nil {
 				return err
 			}
@@ -136,14 +136,14 @@ be used to rebuild your public and private keys.`,
 		},
 	}
 
-	manCmd = &coral.Command{
+	manCmd = &cobra.Command{
 		Use:          "man",
-		Args:         coral.NoArgs,
+		Args:         cobra.NoArgs,
 		Short:        "generate man pages",
 		Hidden:       true,
 		SilenceUsage: true,
-		RunE: func(cmd *coral.Command, args []string) error {
-			manPage, err := mcoral.NewManPage(1, rootCmd)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			manPage, err := mcobra.NewManPage(1, rootCmd)
 			if err != nil {
 				// nolint: wrapcheck
 				return err
@@ -217,8 +217,7 @@ func backup(path string, pass []byte) (string, error) {
 
 	key, err := parsePrivateKey(bts, pass)
 	if err != nil {
-		pwderr := &ssh.PassphraseMissingError{}
-		if errors.As(err, &pwderr) {
+		if errors.Is(err, &ssh.PassphraseMissingError{}) {
 			pass, err := askKeyPassphrase(path)
 			if err != nil {
 				return "", err
@@ -359,7 +358,7 @@ func readPassword(msg string) ([]byte, error) {
 	fmt.Fprint(os.Stderr, msg)
 	t, err := tty.Open()
 	if err != nil {
-		return nil, fmt.Errorf("could not open tty")
+		return nil, fmt.Errorf("could not open tty: %w", err)
 	}
 	defer t.Close() // nolint: errcheck
 	pass, err := term.ReadPassword(int(t.Input().Fd()))
