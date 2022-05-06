@@ -196,8 +196,7 @@ func backup(path string, pass []byte) (string, error) {
 
 	key, err := parsePrivateKey(bts, pass)
 	if err != nil {
-		pwderr := &ssh.PassphraseMissingError{}
-		if errors.As(err, &pwderr) {
+		if errors.Is(err, &ssh.PassphraseMissingError{}) {
 			pass, err := askKeyPassphrase(path)
 			if err != nil {
 				return "", err
@@ -338,7 +337,7 @@ func readPassword(msg string) ([]byte, error) {
 	fmt.Fprint(os.Stderr, msg)
 	t, err := tty.Open()
 	if err != nil {
-		return nil, fmt.Errorf("could not open tty")
+		return nil, fmt.Errorf("could not open tty: %w", err)
 	}
 	defer t.Close() // nolint: errcheck
 	pass, err := term.ReadPassword(int(t.Input().Fd()))
