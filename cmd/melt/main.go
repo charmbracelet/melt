@@ -197,7 +197,11 @@ func openFileOrStdin(path string) (*os.File, error) {
 		return os.Stdin, nil
 	}
 
-	return os.Open(path)
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not open %s: %w", path, err)
+	}
+	return f, nil
 }
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
