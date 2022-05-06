@@ -57,14 +57,19 @@ var (
 		Short: "Generate a seed phrase from an SSH key",
 		Long: `melt generates a seed phrase from an SSH key. That phrase can
 be used to rebuild your public and private keys.`,
-		Args:         coral.ExactArgs(1),
+		Args:         coral.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *coral.Command, args []string) error {
 			if err := setLanguage(language); err != nil {
 				return err
 			}
 
-			mnemonic, err := backup(args[0], nil)
+			var keyPath string
+			if len(args) > 0 {
+				keyPath = args[0]
+			}
+
+			mnemonic, err := backup(keyPath, nil)
 			if err != nil {
 				return err
 			}
@@ -166,17 +171,28 @@ func main() {
 }
 
 func maybeFile(s string) string {
-	if s == "-" {
-		bts, err := io.ReadAll(os.Stdin)
-		if err == nil {
-			return string(bts)
-		}
+	f, err := openFileOrStdin(s)
+	if err != nil {
+		return s
 	}
-	bts, err := os.ReadFile(s)
+	defer f.Close() //nolint:errcheck
+	bts, err := io.ReadAll(f)
 	if err != nil {
 		return s
 	}
 	return string(bts)
+}
+
+func openFileOrStdin(path string) (*os.File, error) {
+	if path == "-" {
+		return os.Stdin, nil
+	}
+
+	if fi, _ := os.Stdin.Stat(); (fi.Mode() & os.ModeNamedPipe) != 0 {
+		return os.Stdin, nil
+	}
+
+	return os.Open(path)
 }
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
@@ -189,13 +205,12 @@ func parsePrivateKey(bts, pass []byte) (interface{}, error) {
 }
 
 func backup(path string, pass []byte) (string, error) {
-	var bts []byte
-	var err error
-	if path == "-" {
-		bts, err = io.ReadAll(os.Stdin)
-	} else {
-		bts, err = os.ReadFile(path)
+	f, err := openFileOrStdin(path)
+	if err != nil {
+		return "", fmt.Errorf("could not read key: %w", err)
 	}
+	defer f.Close() //nolint:errcheck
+	bts, err := io.ReadAll(f)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
