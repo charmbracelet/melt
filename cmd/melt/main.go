@@ -127,14 +127,17 @@ be used to rebuild your public and private keys.`,
 
 			switch args[0] {
 			case "-":
+				_, _ = fmt.Fprint(os.Stderr, "Restoring key to STDOUT...\n")
 				return restore(maybeFile(mnemonic), askNewPassphrase, restoreToWriter(cmd.OutOrStdout()))
 			default:
-				if err := restore(maybeFile(mnemonic), askNewPassphrase, restoreToFiles(args[0])); err != nil {
+				name := args[0]
+				_, _ = fmt.Fprintf(os.Stderr, "Restoring key to %s and %[1]s.pub...\n", name)
+				if err := restore(maybeFile(mnemonic), askNewPassphrase, restoreToFiles(name)); err != nil {
 					return err
 				}
 
-				pub := keyPathStyle.Render(args[0])
-				priv := keyPathStyle.Render(args[0] + ".pub")
+				pub := keyPathStyle.Render(name)
+				priv := keyPathStyle.Render(name + ".pub")
 				fmt.Println(baseStyle.Render(fmt.Sprintf("\nSuccessfully restored keys to %s and %s", pub, priv)))
 			}
 			return nil
@@ -379,7 +382,7 @@ func getWordlist(language string) []string {
 }
 
 func readPassword(msg string) ([]byte, error) {
-	fmt.Fprint(os.Stderr, msg)
+	_, _ = fmt.Fprint(os.Stderr, msg)
 	t, err := tty.Open()
 	if err != nil {
 		return nil, fmt.Errorf("could not open tty: %w", err)
@@ -399,7 +402,7 @@ func askKeyPassphrase(path string) ([]byte, error) {
 
 func askNewPassphrase() ([]byte, error) {
 	defer fmt.Fprintf(os.Stderr, "\n")
-	pass, err := readPassword("Enter passphrase (empty for no passphrase): ")
+	pass, err := readPassword("Enter new passphrase (empty for no passphrase): ")
 	if err != nil {
 		return nil, err
 	}
