@@ -281,8 +281,10 @@ func restore(mnemonic string, passFn func() ([]byte, error), outFn func(pem, pub
 
 func restoreToWriter(w io.Writer) func(pem, _ []byte) error {
 	return func(pem, _ []byte) error {
-		_, err := fmt.Fprint(w, string(pem))
-		return err
+		if _, err := fmt.Fprint(w, string(pem)); err != nil {
+			return fmt.Errorf("could not write private key: %w", err)
+		}
+		return nil
 	}
 }
 
