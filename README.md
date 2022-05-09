@@ -55,8 +55,14 @@ The CLI usage looks like the following:
 # Generate a seed phrase from an SSH key
 melt ~/.ssh/id_ed25519
 
+# Generate a seed phrase from a SSH key from standard input
+cat ~/.ssh/id_ed25519 | melt
+
 # Rebuild the key from the seed phrase
 melt restore ./my-key --seed "seed phrase"
+
+# Rebuild the key and print it to standard output
+cat words | melt restore -
 ```
 
 You can also pipe to and from a file:
