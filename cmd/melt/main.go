@@ -228,14 +228,14 @@ func backup(path string, pass []byte) (string, error) {
 	}
 
 	key, err := parsePrivateKey(bts, pass)
-	if err != nil {
-		if errors.Is(err, &ssh.PassphraseMissingError{}) {
-			pass, err := askKeyPassphrase(path)
-			if err != nil {
-				return "", err
-			}
-			return backup(path, pass)
+	if err != nil && isPasswordError(err) {
+		pass, err := askKeyPassphrase(path)
+		if err != nil {
+			return "", err
 		}
+		return backup(path, pass)
+	}
+	if err != nil {
 		return "", fmt.Errorf("could not parse key: %w", err)
 	}
 
@@ -246,6 +246,11 @@ func backup(path string, pass []byte) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown key type: %v", key)
 	}
+}
+
+func isPasswordError(err error) bool {
+	var kerr *ssh.PassphraseMissingError
+	return errors.As(err, &kerr)
 }
 
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
