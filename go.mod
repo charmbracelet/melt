@@ -8,7 +8,7 @@ require (
 	github.com/matryer/is v1.4.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-tty v0.0.4
-	github.com/muesli/mango-cobra v1.1.0
+	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.2.1-0.20210115123740-9e1d0d53df68
 	github.com/muesli/roff v0.1.0
 	github.com/muesli/termenv v0.11.1-0.20220204035834-5ac8409525e0
