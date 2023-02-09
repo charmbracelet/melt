@@ -11,7 +11,7 @@ require (
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
-	github.com/muesli/termenv v0.13.0
+	github.com/muesli/termenv v0.14.0
 	github.com/spf13/cobra v1.6.1
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.6.0
