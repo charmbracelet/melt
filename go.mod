@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/caarlos0/sshmarshal v0.1.0
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/matryer/is v1.4.0
+	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.17
 	github.com/mattn/go-tty v0.0.4
 	github.com/muesli/mango-cobra v1.2.0
