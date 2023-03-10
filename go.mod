@@ -4,14 +4,14 @@ go 1.17
 
 require (
 	github.com/caarlos0/sshmarshal v0.1.0
-	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.17
 	github.com/mattn/go-tty v0.0.4
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
-	github.com/muesli/termenv v0.15.0
+	github.com/muesli/termenv v0.15.1
 	github.com/spf13/cobra v1.6.1
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.7.0
