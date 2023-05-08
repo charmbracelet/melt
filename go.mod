@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.18
-	github.com/mattn/go-tty v0.0.4
+	github.com/mattn/go-tty v0.0.5
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
