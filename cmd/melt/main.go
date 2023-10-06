@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/caarlos0/sshmarshal"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
 	"github.com/mattn/go-isatty"
@@ -256,10 +255,10 @@ func isPasswordError(err error) bool {
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
 	if len(pass) == 0 {
 		// nolint: wrapcheck
-		return sshmarshal.MarshalPrivateKey(key, "")
+		return ssh.MarshalPrivateKey(key, "")
 	}
 	// nolint: wrapcheck
-	return sshmarshal.MarshalPrivateKeyWithPassphrase(key, "", pass)
+	return ssh.MarshalPrivateKeyWithPassphrase(key, "", pass)
 }
 
 func restore(mnemonic string, passFn func() ([]byte, error), outFn func(pem, pub []byte) error) error {

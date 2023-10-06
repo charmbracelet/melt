@@ -3,7 +3,6 @@ module github.com/charmbracelet/melt
 go 1.17
 
 require (
-	github.com/caarlos0/sshmarshal v0.1.0
 	github.com/charmbracelet/lipgloss v0.8.0
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.19
@@ -14,7 +13,7 @@ require (
 	github.com/muesli/termenv v0.15.2
 	github.com/spf13/cobra v1.7.0
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/crypto v0.13.0
+	golang.org/x/crypto v0.14.0
 	golang.org/x/term v0.13.0
 	golang.org/x/text v0.13.0
 )
