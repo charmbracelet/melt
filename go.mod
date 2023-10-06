@@ -3,7 +3,6 @@ module github.com/charmbracelet/melt
 go 1.17
 
 require (
-	github.com/caarlos0/sshmarshal v0.1.0
 	github.com/charmbracelet/lipgloss v0.8.0
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.19
