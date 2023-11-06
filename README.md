@@ -22,6 +22,7 @@ brew install charmbracelet/tap/melt
 yay -S melt-bin
 
 # Windows (with Scoop)
+scoop bucket add https://github.com/charmbracelet/scoop-bucket.git
 scoop install melt
 
 # Nix
