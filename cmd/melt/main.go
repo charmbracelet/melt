@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2) // nolint: gomnd
+	baseStyle = lipgloss.NewStyle().Margin(0, 0, 1, 2) //nolint: gomnd
 	violet    = lipgloss.Color(completeColor("#6B50FF", "63", "12"))
 	cmdStyle  = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
@@ -41,7 +41,7 @@ var (
 	mnemonicStyle = baseStyle.Copy().
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
-			Padding(1, 2) // nolint: gomnd
+			Padding(1, 2) //nolint: gomnd
 	keyPathStyle = lipgloss.NewStyle().Foreground(violet)
 
 	mnemonic string
@@ -149,10 +149,10 @@ be used to rebuild your public and private keys.`,
 		Short:        "generate man pages",
 		Hidden:       true,
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(*cobra.Command, []string) error {
 			manPage, err := mcobra.NewManPage(1, rootCmd)
 			if err != nil {
-				// nolint: wrapcheck
+				//nolint: wrapcheck
 				return err
 			}
 			manPage = manPage.WithSection("Copyright", "(C) 2022 Charmbracelet, Inc.\n"+
@@ -208,10 +208,10 @@ func openFileOrStdin(path string) (*os.File, error) {
 
 func parsePrivateKey(bts, pass []byte) (interface{}, error) {
 	if len(pass) == 0 {
-		// nolint: wrapcheck
+		//nolint: wrapcheck
 		return ssh.ParseRawPrivateKey(bts)
 	}
-	// nolint: wrapcheck
+	//nolint: wrapcheck
 	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
 }
 
@@ -240,7 +240,7 @@ func backup(path string, pass []byte) (string, error) {
 
 	switch key := key.(type) {
 	case *ed25519.PrivateKey:
-		// nolint: wrapcheck
+		//nolint: wrapcheck
 		return melt.ToMnemonic(key)
 	default:
 		return "", fmt.Errorf("unknown key type: %v", key)
@@ -254,17 +254,17 @@ func isPasswordError(err error) bool {
 
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
 	if len(pass) == 0 {
-		// nolint: wrapcheck
+		//nolint: wrapcheck
 		return ssh.MarshalPrivateKey(key, "")
 	}
-	// nolint: wrapcheck
+	//nolint: wrapcheck
 	return ssh.MarshalPrivateKeyWithPassphrase(key, "", pass)
 }
 
 func restore(mnemonic string, passFn func() ([]byte, error), outFn func(pem, pub []byte) error) error {
 	pvtKey, err := melt.FromMnemonic(mnemonic)
 	if err != nil {
-		// nolint: wrapcheck
+		//nolint: wrapcheck
 		return err
 	}
 
@@ -297,11 +297,11 @@ func restoreToWriter(w io.Writer) func(pem, _ []byte) error {
 
 func restoreToFiles(path string) func(pem, pub []byte) error {
 	return func(pem, pub []byte) error {
-		if err := os.WriteFile(path, pem, 0o600); err != nil { // nolint: gomnd
+		if err := os.WriteFile(path, pem, 0o600); err != nil { //nolint: gomnd
 			return fmt.Errorf("failed to write private key: %w", err)
 		}
 
-		if err := os.WriteFile(path+".pub", pub, 0o600); err != nil { // nolint: gomnd
+		if err := os.WriteFile(path+".pub", pub, 0o600); err != nil { //nolint: gomnd
 			return fmt.Errorf("failed to write public key: %w", err)
 		}
 		return nil
@@ -322,7 +322,7 @@ func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
 }
 
 func completeColor(truecolor, ansi256, ansi string) string {
-	// nolint: exhaustive
+	//nolint: exhaustive
 	switch lipgloss.ColorProfile() {
 	case termenv.TrueColor:
 		return truecolor
@@ -391,7 +391,7 @@ func readPassword(msg string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not open tty: %w", err)
 	}
-	defer t.Close() // nolint: errcheck
+	defer t.Close() //nolint: errcheck
 	pass, err := term.ReadPassword(int(t.Input().Fd()))
 	if err != nil {
 		return nil, fmt.Errorf("could not read passphrase: %w", err)

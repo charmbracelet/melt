@@ -193,7 +193,7 @@ func TestMaybeFile(t *testing.T) {
 		is := is.New(t)
 		path := filepath.Join(t.TempDir(), "f")
 		content := "test content"
-		is.NoErr(os.WriteFile(path, []byte(content), 0o644)) // nolint: gomnd
+		is.NoErr(os.WriteFile(path, []byte(content), 0o644)) //nolint: gomnd
 		is.Equal(content, maybeFile(path))
 	})
 
