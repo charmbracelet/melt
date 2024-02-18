@@ -123,6 +123,45 @@ as it's effectively not used for signing/verifying.
 - Some bytes of your private key might change, due to their random block.
 The key is effectively the same though.
 
+### Restoring the memo
+
+We can use `ssh-keygen` to add a memo to our restored keys.
+
+If you ran the following command to restore a key:
+
+```shell
+melt restore ./my-key --seed "witness shoe deputy celery debate myth \
+  title sign dish bone powder velvet reveal midnight blast mobile \
+  valid cycle announce valid item interest cinnamon cake"
+Restoring key to ./my-key and ./my-key.pub...
+Enter new passphrase (empty for no passphrase):
+Enter same passphrase again:
+
+  Successfully restored keys to ./my-key and ./my-key.pub
+```
+
+You can verify that the memo is not there:
+
+```shell
+cat my-key.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKThPEoe20Wi5zAfyI+gTrTMnODbRtYtQRUZYIvfV19C
+```
+
+Run this command on the restored key:
+
+```shell
+ssh-keygen -c -C melted-again@charm.sh -f ./my-key
+Old comment:
+Comment 'melted-again@charm.sh' applied
+```
+
+And check to see your memo is set:
+
+```shell
+cat my-key.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKThPEoe20Wi5zAfyI+gTrTMnODbRtYtQRUZYIvfV19C melted-again@charm.sh
+```
+
 ## Feedback
 
 We’d love to hear your thoughts on this project. Feel free to drop us a note!
