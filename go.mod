@@ -3,7 +3,7 @@ module github.com/charmbracelet/melt
 go 1.18
 
 require (
-	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-tty v0.0.5
@@ -25,7 +25,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/muesli/mango v0.2.0 // indirect
 	github.com/muesli/mango-pflag v0.1.0 // indirect
-	github.com/rivo/uniseg v0.4.2 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 )
