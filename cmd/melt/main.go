@@ -58,7 +58,7 @@ var (
 be used to rebuild your public and private keys.`,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			if err := setLanguage(language); err != nil {
 				return err
 			}
