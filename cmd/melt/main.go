@@ -38,7 +38,7 @@ var (
 			Foreground(lipgloss.AdaptiveColor{Light: "#FF5E8E", Dark: "#FF5E8E"}).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#ECECEC", "255", "7"), Dark: "#1F1F1F"}).
 			Padding(0, 1)
-	mnemonicStyle = baseStyle.Copy().
+	mnemonicStyle = baseStyle.
 			Foreground(violet).
 			Background(lipgloss.AdaptiveColor{Light: completeColor("#EEEBFF", "255", "7"), Dark: completeColor("#1B1731", "235", "8")}).
 			Padding(1, 2) //nolint: gomnd
@@ -317,7 +317,7 @@ func getWidth(max int) int {
 }
 
 func renderBlock(w io.Writer, s lipgloss.Style, width int, str string) {
-	_, _ = io.WriteString(w, s.Copy().Width(width).Render(str))
+	_, _ = io.WriteString(w, s.Width(width).Render(str))
 	_, _ = io.WriteString(w, "\n")
 }
 

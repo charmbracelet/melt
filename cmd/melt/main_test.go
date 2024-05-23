@@ -87,7 +87,7 @@ func TestBackupRestoreKnownKey(t *testing.T) {
 		var b bytes.Buffer
 		is.NoErr(restore(expectedMnemonic, staticPass(nil), restoreToWriter(&b)))
 
-		k, err := ssh.ParsePrivateKey([]byte(b.String()))
+		k, err := ssh.ParsePrivateKey(b.Bytes())
 		is.NoErr(err)
 
 		is.Equal(expectedFingerprint, ssh.FingerprintSHA256(k.PublicKey()))
