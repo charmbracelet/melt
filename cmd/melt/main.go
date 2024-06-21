@@ -1,19 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"crypto/ed25519"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
+	"github.com/charmbracelet/x/sshkey"
 	"github.com/mattn/go-isatty"
-	"github.com/mattn/go-tty"
 	mcobra "github.com/muesli/mango-cobra"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
@@ -68,7 +67,7 @@ be used to rebuild your public and private keys.`,
 				keyPath = args[0]
 			}
 
-			mnemonic, err := backup(keyPath, nil)
+			mnemonic, err := backup(keyPath)
 			if err != nil {
 				return err
 			}
@@ -206,16 +205,7 @@ func openFileOrStdin(path string) (*os.File, error) {
 	return f, nil
 }
 
-func parsePrivateKey(bts, pass []byte) (interface{}, error) {
-	if len(pass) == 0 {
-		//nolint: wrapcheck
-		return ssh.ParseRawPrivateKey(bts)
-	}
-	//nolint: wrapcheck
-	return ssh.ParseRawPrivateKeyWithPassphrase(bts, pass)
-}
-
-func backup(path string, pass []byte) (string, error) {
+func backup(path string) (string, error) {
 	f, err := openFileOrStdin(path)
 	if err != nil {
 		return "", fmt.Errorf("could not read key: %w", err)
@@ -226,14 +216,7 @@ func backup(path string, pass []byte) (string, error) {
 		return "", fmt.Errorf("could not read key: %w", err)
 	}
 
-	key, err := parsePrivateKey(bts, pass)
-	if err != nil && isPasswordError(err) {
-		pass, err := askKeyPassphrase(path)
-		if err != nil {
-			return "", err
-		}
-		return backup(path, pass)
-	}
+	key, err := sshkey.ParseRaw(path, bts)
 	if err != nil {
 		return "", fmt.Errorf("could not parse key: %w", err)
 	}
@@ -245,11 +228,6 @@ func backup(path string, pass []byte) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown key type: %v", key)
 	}
-}
-
-func isPasswordError(err error) bool {
-	var kerr *ssh.PassphraseMissingError
-	return errors.As(err, &kerr)
 }
 
 func marshallPrivateKey(key ed25519.PrivateKey, pass []byte) (*pem.Block, error) {
@@ -385,40 +363,30 @@ func getWordlist(language string) []string {
 	return wl
 }
 
-func readPassword(msg string) ([]byte, error) {
-	_, _ = fmt.Fprint(os.Stderr, msg)
-	t, err := tty.Open()
-	if err != nil {
-		return nil, fmt.Errorf("could not open tty: %w", err)
-	}
-	defer t.Close() //nolint: errcheck
-	pass, err := term.ReadPassword(int(t.Input().Fd()))
-	if err != nil {
-		return nil, fmt.Errorf("could not read passphrase: %w", err)
-	}
-	return pass, nil
-}
-
-func askKeyPassphrase(path string) ([]byte, error) {
-	defer fmt.Fprintf(os.Stderr, "\n")
-	return readPassword(fmt.Sprintf("Enter the passphrase to unlock %q: ", path))
-}
-
 func askNewPassphrase() ([]byte, error) {
-	defer fmt.Fprintf(os.Stderr, "\n")
-	pass, err := readPassword("Enter new passphrase (empty for no passphrase): ")
-	if err != nil {
+	var pass, confirm string
+	if err := huh.Run(
+		huh.NewInput().
+			Title("Enter new passphrase (empty for no passphrase): ").
+			Value(&pass).
+			EchoMode(huh.EchoModePassword).
+			Inline(true),
+	); err != nil {
+		return nil, err
+	}
+	if err := huh.Run(
+		huh.NewInput().
+			Title("Enter same passphrase again: ").
+			Value(&confirm).
+			EchoMode(huh.EchoModePassword).
+			Inline(true),
+	); err != nil {
 		return nil, err
 	}
 
-	confirm, err := readPassword("\nEnter same passphrase again: ")
-	if err != nil {
-		return nil, fmt.Errorf("could not read password confirmation for key: %w", err)
-	}
-
-	if !bytes.Equal(pass, confirm) {
+	if pass != confirm {
 		return nil, fmt.Errorf("Passphareses do not match")
 	}
 
-	return pass, nil
+	return []byte(pass), nil
 }
