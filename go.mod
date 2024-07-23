@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.12.1
 	github.com/matryer/is v1.4.1
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mattn/go-tty v0.0.5
+	github.com/mattn/go-tty v0.0.7
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
@@ -23,7 +23,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.1.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/muesli/mango v0.2.0 // indirect
 	github.com/muesli/mango-pflag v0.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
