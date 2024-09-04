@@ -15,7 +15,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.26.0
 	golang.org/x/term v0.23.0
-	golang.org/x/text v0.17.0
+	golang.org/x/text v0.18.0
 )
 
 require (
