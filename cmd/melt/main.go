@@ -308,9 +308,9 @@ func restoreToFiles(path string) func(pem, pub []byte) error {
 	}
 }
 
-func getWidth(max int) int {
-	w, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || w > max {
+func getWidth(maxw int) int {
+	w, _, err := term.GetSize(int(os.Stdout.Fd())) //nolint: gosec
+	if err != nil || w > maxw {
 		return maxWidth
 	}
 	return w
@@ -391,8 +391,8 @@ func readPassword(msg string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not open tty: %w", err)
 	}
-	defer t.Close() //nolint: errcheck
-	pass, err := term.ReadPassword(int(t.Input().Fd()))
+	defer t.Close()                                     //nolint: errcheck
+	pass, err := term.ReadPassword(int(t.Input().Fd())) //nolint: gosec
 	if err != nil {
 		return nil, fmt.Errorf("could not read passphrase: %w", err)
 	}
