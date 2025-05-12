@@ -1,6 +1,6 @@
 module github.com/charmbracelet/melt
 
-go 1.18
+go 1.23.0
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -15,7 +15,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.37.0
 	golang.org/x/term v0.31.0
-	golang.org/x/text v0.24.0
+	golang.org/x/text v0.25.0
 )
 
 require (
