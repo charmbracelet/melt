@@ -162,6 +162,12 @@ cat my-key.pub
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKThPEoe20Wi5zAfyI+gTrTMnODbRtYtQRUZYIvfV19C melted-again@charm.sh
 ```
 
+## Contributing
+
+See [contributing][contribute].
+
+[contribute]: https://github.com/charmbracelet/melt/contribute
+
 ## Feedback
 
 We’d love to hear your thoughts on this project. Feel free to drop us a note!
