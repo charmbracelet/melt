@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/ed25519"
 	"encoding/pem"
 	"errors"
@@ -10,12 +11,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/melt"
+	"github.com/charmbracelet/x/cellbuf"
 	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-tty"
 	mcobra "github.com/muesli/mango-cobra"
-	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/roff"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
@@ -88,9 +90,10 @@ be used to rebuild your public and private keys.`,
 				if language != "en" {
 					lang = fmt.Sprintf(" --language %s", language)
 				}
-				cmd := wordwrap.String(
+				cmd := cellbuf.Wrap(
 					os.Args[0]+` restore`+lang+` ./my-key --seed "`+mnemonic+`"`,
 					w-lipgloss.Width(cmdEOL)-baseStyle.GetHorizontalFrameSize()*2,
+					"",
 				)
 				leftPad := strings.Repeat(" ", baseStyle.GetMarginLeft())
 				cmdLines := strings.Split(cmd, "\n")
@@ -172,7 +175,7 @@ func init() {
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := fang.Execute(context.Background(), rootCmd); err != nil {
 		os.Exit(1)
 	}
 }
