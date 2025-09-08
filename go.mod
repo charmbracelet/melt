@@ -1,6 +1,6 @@
 module github.com/charmbracelet/melt
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -11,11 +11,11 @@ require (
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
 	github.com/muesli/termenv v0.16.0
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.1
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.41.0
-	golang.org/x/term v0.34.0
-	golang.org/x/text v0.28.0
+	golang.org/x/term v0.35.0
+	golang.org/x/text v0.29.0
 )
 
 require (
@@ -30,7 +30,7 @@ require (
 	github.com/muesli/mango v0.2.0 // indirect
 	github.com/muesli/mango-pflag v0.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 )
